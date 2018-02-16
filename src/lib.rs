@@ -6,6 +6,3 @@ extern crate nom;
 mod parser;
 mod structs;
 
-mod ipfix {
-
-}

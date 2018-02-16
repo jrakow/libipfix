@@ -19,7 +19,7 @@ pub struct Field_Specifier {
 
 pub struct Set {
 	pub header : Set_Header,
-	pub records : Vec<Record>,
+	pub records : Records,
 }
 
 pub struct Set_Header {
@@ -27,10 +27,10 @@ pub struct Set_Header {
 	pub length : u16,
 }
 
-pub enum Record {
-	Template_Record,
-	Options_Template_Record,
-	Data_Record,
+pub enum Records {
+	Template_Records(Vec<Template_Record>),
+	Options_Template_Records(Vec<Options_Template_Record>),
+	Data_Records(Vec<Data_Record>),
 }
 
 pub struct Template_Record {

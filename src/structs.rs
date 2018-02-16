@@ -1,6 +1,6 @@
 pub struct Message {
 	pub header : Message_Header,
-	pub records : Vec<Set>,
+	pub sets : Vec<Set>,
 }
 
 pub struct Message_Header {

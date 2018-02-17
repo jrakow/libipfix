@@ -67,18 +67,15 @@ named_args!(pub options_template_records_parser(set_header : Set_Header)<Vec<Opt
 */
 
 // needs explicit lifetimes because reference to cache
-pub fn data_records_parser<'input>(input : &'input[u8], set_header : Set_Header, cache : &Template_Cache) -> IResult<&'input[u8], Vec<Data_Record>> {
+pub fn data_records_parser<'input>(input : &'input[u8], records_length : u16, template_size : u16) -> IResult<&'input[u8], Vec<Data_Record>> {
 	length_value!(
 		input,
-		value!(set_header.length - SET_HEADER_LENGTH),
-		cond_reduce!(
-			cache.lookup(set_header.set_id).is_some(),
-			many1!(
-				complete!(map!(
-					take!(cache.lookup(set_header.set_id).unwrap().size()),
-					|a : &[u8]| { Data_Record{ fields : a.to_vec() } }
-				))
-			)
+		value!(records_length),
+		many1!(
+			complete!(map!(
+				take!(template_size),
+				|a : &[u8]| { Data_Record{ fields : a.to_vec() } }
+			))
 		)
 	)
 }

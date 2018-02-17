@@ -4,26 +4,39 @@ use super::*;
 
 // TODO ignore first bit at enterprise_number
 // TODO subtract header size from length field
+// TODO check overall length
+// TODO insert padding
 
-named!(message_parser<Message>,
+named!(pub message_parser<Message>,
 	do_parse!(
-		header : message_header_parser >>
-		sets : flat_map!(
-			take!(header.length),
-			separated_list!(/* dummy */ value!(0), set_parser)
+		message_header : message_header_parser >>
+		sets : many0!(
+			do_parse!(
+				set_header : set_header_parser >>
+				data : length_data!(value!(set_header.length - SET_HEADER_LENGTH)) >>
+				(set_header, data)
+			)
 		) >>
-		(Message{ header, sets })
+		(Message{ header : message_header, sets : sets })
 	)
 );
 
 named!(message_header_parser<Message_Header>,
 	do_parse!(
-		version_number : u16!(Endianness::Big) >>
+		/* version_number */ tag!(b"000a") >>
 		length : u16!(Endianness::Big) >>
 		export_time : u32!(Endianness::Big) >>
 		sequence_number : u32!(Endianness::Big) >>
 		observation_domain_id : u32!(Endianness::Big) >>
-		(Message_Header{ version_number, length, export_time, sequence_number, observation_domain_id })
+		(Message_Header{ version_number : 0x0a, length, export_time, sequence_number, observation_domain_id })
+	)
+);
+
+named!(set_header_parser<Set_Header>,
+	do_parse!(
+		set_id : u16!(Endianness::Big) >>
+		length : u16!(Endianness::Big) >>
+		(Set_Header{ set_id, length })
 	)
 );
 
@@ -36,48 +49,38 @@ named!(field_specifier_parser<Field_Specifier>,
 	)
 );
 
-named!(set_parser<Set>,
-	do_parse!(
-		header : set_header_parser >>
-		records : alt_complete!(
-			cond_reduce!(header.set_id == 2,
-				map!(complete!(flat_map!(
-					take!(header.length),
-					many0!(template_record_parser)
-				)), |records : Vec<Template_Record>| Records::Template_Records(records))
-			)
-			| cond_reduce!(header.set_id == 3,
-				map!(complete!(flat_map!(
-					take!(header.length),
-					many0!(options_template_record_parser)
-				)), |records : Vec<Options_Template_Record>| Records::Options_Template_Records(records))
-			)
-			| cond_reduce!(header.set_id >= 256,
-				map!(complete!(flat_map!(
-					take!(header.length),
-					many0!(
-						cond_reduce!(
-							template_size(header.set_id).is_some(),
-							map!(
-								take!(template_size(header.set_id).unwrap()),
-								|fields : &[u8]| { Data_Record{ fields : fields.to_vec() } }
-							)
-						)
-					)
-				)), |records : Vec<Data_Record>| Records::Data_Records(records))
-			)
-		) >>
-		(Set{ header, records })
+named_args!(pub template_records_parser(set_header : Set_Header)<Vec<Template_Record>>,
+	length_value!(
+		value!(set_header.length - SET_HEADER_LENGTH),
+		many1!(template_record_parser)
 	)
 );
 
-named!(set_header_parser<Set_Header>,
-	do_parse!(
-		set_id : u16!(Endianness::Big) >>
-		length : u16!(Endianness::Big) >>
-		(Set_Header{ set_id, length })
+/* TODO
+named_args!(pub options_template_records_parser(set_header : Set_Header)<Vec<Options_Template_Record>>,
+	length_value!(
+		value!(set_header.length - set_header_length),
+		many1!(options_template_record_parser)
 	)
 );
+*/
+
+// needs explicit lifetimes because reference to cache
+pub fn data_records_parser<'input>(input : &'input[u8], set_header : Set_Header, cache : &Template_Cache) -> IResult<&'input[u8], Vec<Data_Record>> {
+	length_value!(
+		input,
+		value!(set_header.length - SET_HEADER_LENGTH),
+		cond_reduce!(
+			cache.lookup(set_header.set_id).is_some(),
+			many1!(
+				map!(
+					take!(cache.lookup_size(set_header.set_id).unwrap()),
+					|a : &[u8]| { Data_Record{ fields : a.to_vec() } }
+				)
+			)
+		)
+	)
+}
 
 named!(template_record_parser<Template_Record>,
 	do_parse!(
@@ -98,17 +101,24 @@ named!(template_record_header_parser<Template_Record_Header>,
 	)
 );
 
+/* TODO
 named!(options_template_record_parser<Options_Template_Record>,
 	do_parse!(
 		header : options_template_record_header_parser >>
 		fields : many_m_n!(
-			(header.field_count + header.scope_field_count) as usize,
-			(header.field_count + header.scope_field_count) as usize,
+			header.field_count as usize,
+			header.field_count as usize,
 			field_specifier_parser) >>
-		(Options_Template_Record{ header, fields })
+		scope_fields : many_m_n!(
+			header.scope_field_count as usize,
+			header.scope_field_count as usize,
+			field_specifier_parser) >>
+		(Options_Template_Record{ header, fields, scope_fields })
 	)
 );
+*/
 
+/* TODO
 named!(options_template_record_header_parser<Options_Template_Record_Header>,
 	do_parse!(
 		template_id : u16!(Endianness::Big) >>
@@ -117,3 +127,4 @@ named!(options_template_record_header_parser<Options_Template_Record_Header>,
 		(Options_Template_Record_Header{ template_id, field_count, scope_field_count })
 	)
 );
+*/

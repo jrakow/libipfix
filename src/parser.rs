@@ -1,6 +1,5 @@
 use nom::*;
 use structs::*;
-use super::*;
 
 // TODO insert padding
 

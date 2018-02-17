@@ -221,4 +221,64 @@ mod tests {
 			Ok((&[][..], res))
 		);
 	}
+
+	#[test]
+	fn field_specifier_parser_test() {
+		let data : &[u8] = &[
+			0x00, 0x07,
+			0x00, 0x02,
+		];
+		let res = Field_Specifier{
+			information_element_id : 7u16,
+			field_length : 2u16,
+			enterprise_number : None,
+		};
+		assert_eq!(
+			field_specifier_parser(&data),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[
+			0x01, 0x37,
+			0x00, 0x08,
+		];
+		let res = Field_Specifier{
+			information_element_id : 311u16,
+			field_length : 8u16,
+			enterprise_number : None,
+		};
+		assert_eq!(
+			field_specifier_parser(&data),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[
+			0x00, 0xd2,
+			0x00, 0x04,
+		];
+		let res = Field_Specifier{
+			information_element_id : 210u16,
+			field_length : 4,
+			enterprise_number : None,
+		};
+		assert_eq!(
+			field_specifier_parser(&data),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[
+			0x81, 0x02,
+			0x00, 0x04,
+			0x00, 0x00, 0xC3, 0x3C,
+		];
+		let res = Field_Specifier{
+			information_element_id : 258u16,
+			field_length : 4,
+			enterprise_number : Some(0xC33C),
+		};
+		assert_eq!(
+			field_specifier_parser(&data),
+			Ok((&[][..], res))
+		);
+	}
 }

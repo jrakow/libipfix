@@ -153,4 +153,19 @@ mod tests {
 			Ok((&b""[..], res))
 		);
 	}
+
+	#[test]
+	fn set_header_parser_test() {
+		let data : [u8; 4] = [
+			0x00, 0x02, 0x00, 4, // set id, set length
+		];
+		let res = Set_Header{
+			set_id : 2u16,
+			length : 4u16
+		};
+		assert_eq!(
+			set_header_parser(&data),
+			Ok((&[][..], res))
+		);
+	}
 }

@@ -5,14 +5,18 @@ use structs::*;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Template_Cache {
 	templates : HashMap<u16, Template_Record>,
-	// TODO
-//	options_templates : HashMap<u16, Options_Template_Record>,
 }
 
 impl Template_Cache {
 	pub fn update_with(&mut self, template : Template_Record) {
 		assert!(template.header.template_id >= 256);
-		assert!(template.header.field_count as usize == template.fields.len());
+		assert!(
+			template.header.scope_field_count as usize
+			== template.scope_fields.len());
+		assert!(
+			template.header.field_count as usize
+			- template.header.scope_field_count as usize
+			== template.fields.len());
 
 		if template.header.field_count == 0 {
 			// template withdrawal
@@ -58,7 +62,9 @@ mod tests {
 			header : Template_Record_Header {
 				template_id : 256,
 				field_count : 1,
+				scope_field_count : 0,
 			},
+			scope_fields : vec![],
 			fields : vec![ DUMMY_FIELD ]
 		};
 		cache.update_with(template.clone());
@@ -72,7 +78,9 @@ mod tests {
 			header : Template_Record_Header {
 				template_id : 256,
 				field_count : 0,
+				scope_field_count : 0,
 			},
+			scope_fields : vec![],
 			fields : vec![]
 		};
 		cache.update_with(removal);
@@ -87,7 +95,9 @@ mod tests {
 				header : Template_Record_Header {
 					template_id : 256,
 					field_count : 0,
+					scope_field_count : 0,
 				},
+				scope_fields : vec![],
 				fields : vec![]
 			}
 		);
@@ -103,7 +113,9 @@ mod tests {
 				header : Template_Record_Header {
 					template_id : 0,
 					field_count : 0,
+					scope_field_count : 0,
 				},
+				scope_fields : vec![],
 				fields : vec![]
 			}
 		);
@@ -118,7 +130,9 @@ mod tests {
 				header : Template_Record_Header {
 					template_id : 0,
 					field_count : 1,
+					scope_field_count : 0,
 				},
+				scope_fields : vec![],
 				fields : vec![]
 			}
 		);

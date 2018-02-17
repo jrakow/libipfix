@@ -53,18 +53,11 @@ named!(field_specifier_parser<Field_Specifier>,
 named_args!(pub template_records_parser(set_header : Set_Header)<Vec<Template_Record>>,
 	length_value!(
 		value!(set_header.length - SET_HEADER_LENGTH),
-		many1!(complete!(template_record_parser))
+		many1!(complete!(
+			call!(template_record_parser, set_header.set_id == 3))
+		)
 	)
 );
-
-/* TODO
-named_args!(pub options_template_records_parser(set_header : Set_Header)<Vec<Options_Template_Record>>,
-	length_value!(
-		value!(set_header.length - set_header_length),
-		many1!(options_template_record_parser)
-	)
-);
-*/
 
 // needs explicit lifetimes because reference to cache
 pub fn data_records_parser<'input>(input : &'input[u8], records_length : u16, template_size : u16) -> IResult<&'input[u8], Vec<Data_Record>> {
@@ -80,51 +73,33 @@ pub fn data_records_parser<'input>(input : &'input[u8], records_length : u16, te
 	)
 }
 
-named!(template_record_parser<Template_Record>,
+named_args!(template_record_parser(is_options_template : bool)<Template_Record>,
 	do_parse!(
-		header : template_record_header_parser >>
+		header : call!(template_record_header_parser, is_options_template) >>
+		scope_fields : count!(
+			field_specifier_parser,
+			header.scope_field_count as usize) >>
 		fields : count!(
 			field_specifier_parser,
-			header.field_count as usize) >>
-		(Template_Record{ header, fields })
+			header.field_count as usize - header.scope_field_count as usize) >>
+		(Template_Record{ header, fields, scope_fields })
 	)
 );
 
-named!(template_record_header_parser<Template_Record_Header>,
+named_args!(template_record_header_parser(is_options_template : bool)<Template_Record_Header>,
 	do_parse!(
 		template_id : u16!(Endianness::Big) >>
 		field_count : u16!(Endianness::Big) >>
-		(Template_Record_Header{ template_id, field_count })
+		scope_field_count : map!(
+				cond!(
+					is_options_template && field_count != 0,// withdrawal has no scope_field_count
+					u16!(Endianness::Big)
+				),
+				|option| option.unwrap_or(0)
+		) >>
+		(Template_Record_Header{ template_id, field_count, scope_field_count })
 	)
 );
-
-/* TODO
-named!(options_template_record_parser<Options_Template_Record>,
-	do_parse!(
-		header : options_template_record_header_parser >>
-		fields : many_m_n!(
-			header.field_count as usize,
-			header.field_count as usize,
-			field_specifier_parser) >>
-		scope_fields : many_m_n!(
-			header.scope_field_count as usize,
-			header.scope_field_count as usize,
-			field_specifier_parser) >>
-		(Options_Template_Record{ header, fields, scope_fields })
-	)
-);
-*/
-
-/* TODO
-named!(options_template_record_header_parser<Options_Template_Record_Header>,
-	do_parse!(
-		template_id : u16!(Endianness::Big) >>
-		field_count : u16!(Endianness::Big) >>
-		scope_field_count : u16!(Endianness::Big) >>
-		(Options_Template_Record_Header{ template_id, field_count, scope_field_count })
-	)
-);
-*/
 
 #[cfg(test)]
 mod tests {
@@ -237,7 +212,9 @@ mod tests {
 				header : Template_Record_Header {
 					template_id : 0x0102u16,
 					field_count : 0x0001u16,
+					scope_field_count : 0u16,
 				},
+				scope_fields : vec![],
 				fields : vec![
 					Field_Specifier{
 						information_element_id : 7u16,
@@ -250,7 +227,9 @@ mod tests {
 				header : Template_Record_Header {
 					template_id : 0x0102u16,
 					field_count : 0x0001u16,
+					scope_field_count : 0u16,
 				},
+				scope_fields : vec![],
 				fields : vec![
 					Field_Specifier{
 						information_element_id : 7u16,
@@ -279,7 +258,9 @@ mod tests {
 			header : Template_Record_Header {
 				template_id : 0x0102u16,
 				field_count : 0x0004u16,
+				scope_field_count : 0u16,
 			},
+			scope_fields : vec![],
 			fields : vec![
 				Field_Specifier{
 					information_element_id : 7u16,
@@ -304,7 +285,7 @@ mod tests {
 			],
 		};
 		assert_eq!(
-			template_record_parser(&data),
+			template_record_parser(&data, false),
 			Ok((&[][..], res))
 		);
 	}

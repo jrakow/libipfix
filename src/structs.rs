@@ -32,12 +32,13 @@ pub struct Set_Header {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Template_Record {
 	pub header : Template_Record_Header,
+	pub scope_fields : Vec<Field_Specifier>,
 	pub fields : Vec<Field_Specifier>,
 }
 
 impl Template_Record {
 	pub fn size(&self) -> u16 {
-		self.fields.iter().map(|field| field.field_length).sum()
+		self.scope_fields.iter().chain(self.fields.iter()).map(|field| field.field_length).sum()
 	}
 }
 
@@ -45,23 +46,8 @@ impl Template_Record {
 pub struct Template_Record_Header {
 	pub template_id : u16,
 	pub field_count : u16,
-}
-
-/* TODO
-pub struct Options_Template_Record {
-	pub header : Options_Template_Record_Header,
-	pub fields : Vec<Field_Specifier>,
-	pub scope_fields : Vec<Field_Specifier>
-}
-*/
-
-/* TODO
-pub struct Options_Template_Record_Header {
-	pub template_id : u16,
-	pub field_count : u16,
 	pub scope_field_count : u16,
 }
-*/
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Data_Record {

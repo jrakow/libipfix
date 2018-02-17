@@ -2,17 +2,15 @@ use nom::*;
 use structs::*;
 use super::*;
 
-// TODO subtract header size from length field
-// TODO check overall length
 // TODO insert padding
 
 named!(pub message_parser<Message>,
 	do_parse!(
+		// TODO check length here too
 		message_header : message_header_parser >>
 		sets : many0!(
 			complete!(do_parse!(
-				set_header : set_header_parser >>
-				// TODO handle underflow
+				set_header : verify!(set_header_parser, |header : Set_Header| header.length > SET_HEADER_LENGTH) >>
 				data : length_data!(value!(set_header.length - SET_HEADER_LENGTH)) >>
 				(set_header, data)
 			))

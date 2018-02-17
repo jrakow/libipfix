@@ -23,7 +23,7 @@ pub struct Field_Specifier {
 	pub enterprise_number : Option<u32>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Set_Header {
 	pub set_id : u16,
 	pub length : u16,

@@ -2,7 +2,6 @@ use nom::*;
 use structs::*;
 use super::*;
 
-// TODO ignore first bit at enterprise_number
 // TODO subtract header size from length field
 // TODO check overall length
 // TODO insert padding
@@ -46,7 +45,11 @@ named!(field_specifier_parser<Field_Specifier>,
 		information_element_id : u16!(Endianness::Big) >>
 		field_length : u16!(Endianness::Big) >>
 		enterprise_number : cond!(information_element_id & 0x8000 != 0x0000, u32!(Endianness::Big)) >>
-		(Field_Specifier{ information_element_id, field_length, enterprise_number })
+		(Field_Specifier{
+			information_element_id : information_element_id & 0x7fff,
+			field_length,
+			enterprise_number
+		})
 	)
 );
 

@@ -128,3 +128,29 @@ named!(options_template_record_header_parser<Options_Template_Record_Header>,
 	)
 );
 */
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn message_header_parser_test() {
+		let data : [u8; 16] = [
+			0x00, 0x0a, 0x00, 56, // version, length
+			0x5A, 0x88, 0x08, 0x2E, // time
+			0xfe, 0xdc, 0xba, 0x98, // seq num
+			0xde, 0xad, 0xbe, 0xef, // domain id
+		];
+		let res = Message_Header {
+			version_number : 0x000au16,
+			length : 56,
+			export_time : 0x5a88082eu32,
+			sequence_number : 0xfedcba98u32,
+			observation_domain_id : 0xdeadbeefu32,
+		};
+		assert_eq!(
+			message_header_parser(&data),
+			Ok((&b""[..], res))
+		);
+	}
+}

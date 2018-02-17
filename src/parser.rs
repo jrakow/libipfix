@@ -197,6 +197,94 @@ mod tests {
 	#[test]
 	fn template_records_parser_test() {
 		let set_header = Set_Header {
+			set_id : 3,
+			length : 50
+		};
+		let data : &[u8] = &[
+			1, 0, // template_id
+			0, 10, // field_count
+			0, 2, // scope_field_count
+
+			1, 90, 0, 4,
+			1, 47, 0, 2,
+			1, 83, 0, 1,
+			1, 88, 0, 1,
+			1, 89, 0, 2,
+			0, 210, 0, 6,
+			1, 86, 0, 8,
+			1, 87, 0, 8,
+			1, 85, 255, 255,
+			1, 84, 255, 255,
+		];
+		let res = vec![
+			Template_Record {
+				header : Template_Record_Header {
+					template_id : 0x0100u16,
+					field_count : 0x000au16,
+					scope_field_count : 0x0002,
+				},
+				scope_fields : vec![
+					Field_Specifier{
+						information_element_id : 0x015au16,
+						field_length : 4u16,
+						enterprise_number : None,
+					},
+					Field_Specifier{
+						information_element_id : 0x012fu16,
+						field_length : 2u16,
+						enterprise_number : None,
+					},
+				],
+				fields : vec![
+					Field_Specifier{
+						information_element_id : 0x0153u16,
+						field_length : 1u16,
+						enterprise_number : None,
+					},
+					Field_Specifier{
+						information_element_id : 0x0158u16,
+						field_length : 1u16,
+						enterprise_number : None,
+					},
+					Field_Specifier{
+						information_element_id : 0x0159u16,
+						field_length : 2u16,
+						enterprise_number : None,
+					},
+					Field_Specifier{
+						information_element_id : 0x00d2u16,
+						field_length : 6u16,
+						enterprise_number : None,
+					},
+					Field_Specifier{
+						information_element_id : 0x0156u16,
+						field_length : 8u16,
+						enterprise_number : None,
+					},
+					Field_Specifier{
+						information_element_id : 0x0157u16,
+						field_length : 8u16,
+						enterprise_number : None,
+					},
+					Field_Specifier{
+						information_element_id : 0x0155u16,
+						field_length : 0xffffu16,
+						enterprise_number : None,
+					},
+					Field_Specifier{
+						information_element_id : 0x0154u16,
+						field_length : 0xffffu16,
+						enterprise_number : None,
+					},
+				],
+			},
+		];
+		assert_eq!(
+			template_records_parser(&data, set_header),
+			Ok((&[][..], res))
+		);
+
+		let set_header = Set_Header {
 			set_id : 2,
 			length : 20,
 		};

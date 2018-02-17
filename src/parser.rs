@@ -76,7 +76,7 @@ pub fn data_records_parser<'input>(input : &'input[u8], set_header : Set_Header,
 			cache.lookup(set_header.set_id).is_some(),
 			many1!(
 				complete!(map!(
-					take!(cache.lookup_size(set_header.set_id).unwrap()),
+					take!(cache.lookup(set_header.set_id).unwrap().size()),
 					|a : &[u8]| { Data_Record{ fields : a.to_vec() } }
 				))
 			)

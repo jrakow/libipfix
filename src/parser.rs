@@ -24,12 +24,12 @@ named!(pub message_parser<Message>,
 
 named!(message_header_parser<Message_Header>,
 	do_parse!(
-		/* version_number */ tag!(b"000a") >>
+		/* version_number */ tag!([0x00, 0x0a]) >>
 		length : u16!(Endianness::Big) >>
 		export_time : u32!(Endianness::Big) >>
 		sequence_number : u32!(Endianness::Big) >>
 		observation_domain_id : u32!(Endianness::Big) >>
-		(Message_Header{ version_number : 0x0a, length, export_time, sequence_number, observation_domain_id })
+		(Message_Header{ version_number : 0x000au16, length, export_time, sequence_number, observation_domain_id })
 	)
 );
 

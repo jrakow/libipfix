@@ -220,6 +220,53 @@ mod tests {
 	}
 
 	#[test]
+	fn template_records_parser_test() {
+		let set_header = Set_Header {
+			set_id : 2,
+			length : 20,
+		};
+		let data : &[u8] = &[
+			0x01, 0x02, 0x00, 0x01,
+			0x00, 0x07, 0x00, 0x02,
+
+			0x01, 0x02, 0x00, 0x01,
+			0x00, 0x07, 0x00, 0x02,
+		];
+		let res = vec![
+			Template_Record{
+				header : Template_Record_Header {
+					template_id : 0x0102u16,
+					field_count : 0x0001u16,
+				},
+				fields : vec![
+					Field_Specifier{
+						information_element_id : 7u16,
+						field_length : 2u16,
+						enterprise_number : None,
+					},
+				],
+			},
+			Template_Record{
+				header : Template_Record_Header {
+					template_id : 0x0102u16,
+					field_count : 0x0001u16,
+				},
+				fields : vec![
+					Field_Specifier{
+						information_element_id : 7u16,
+						field_length : 2u16,
+						enterprise_number : None,
+					},
+				],
+			},
+		];
+		assert_eq!(
+			template_records_parser(&data, set_header),
+			Ok((&[][..], res))
+		);
+	}
+
+	#[test]
 	fn template_record_parser_test() {
 		let data : &[u8] = &[
 			0x01, 0x02, 0x00, 0x04,

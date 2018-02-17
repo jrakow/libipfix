@@ -11,11 +11,12 @@ named!(pub message_parser<Message>,
 	do_parse!(
 		message_header : message_header_parser >>
 		sets : many0!(
-			do_parse!(
+			complete!(do_parse!(
 				set_header : set_header_parser >>
+				// TODO handle underflow
 				data : length_data!(value!(set_header.length - SET_HEADER_LENGTH)) >>
 				(set_header, data)
-			)
+			))
 		) >>
 		(Message{ header : message_header, sets : sets })
 	)
@@ -52,7 +53,7 @@ named!(field_specifier_parser<Field_Specifier>,
 named_args!(pub template_records_parser(set_header : Set_Header)<Vec<Template_Record>>,
 	length_value!(
 		value!(set_header.length - SET_HEADER_LENGTH),
-		many1!(template_record_parser)
+		many1!(complete!(template_record_parser))
 	)
 );
 
@@ -73,10 +74,10 @@ pub fn data_records_parser<'input>(input : &'input[u8], set_header : Set_Header,
 		cond_reduce!(
 			cache.lookup(set_header.set_id).is_some(),
 			many1!(
-				map!(
+				complete!(map!(
 					take!(cache.lookup_size(set_header.set_id).unwrap()),
 					|a : &[u8]| { Data_Record{ fields : a.to_vec() } }
-				)
+				))
 			)
 		)
 	)
@@ -85,10 +86,9 @@ pub fn data_records_parser<'input>(input : &'input[u8], set_header : Set_Header,
 named!(template_record_parser<Template_Record>,
 	do_parse!(
 		header : template_record_header_parser >>
-		fields : many_m_n!(
-			header.field_count as usize,
-			header.field_count as usize,
-			field_specifier_parser) >>
+		fields : count!(
+			field_specifier_parser,
+			header.field_count as usize) >>
 		(Template_Record{ header, fields })
 	)
 );

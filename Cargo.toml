@@ -1,7 +1,15 @@
 [package]
-name = "ipfix"
+name = "ipfix_rs"
 version = "0.1.0"
 authors = ["Julius Rakow <julius@familie-rakow.de>"]
+
+[lib]
+name = "lib_ipfix_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "listener"
+path = "src/listener.rs"
 
 [dependencies]
 env_logger = "0.5"

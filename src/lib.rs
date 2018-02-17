@@ -6,10 +6,9 @@ extern crate nom;
 extern crate log;
 extern crate env_logger;
 
-mod parser;
-use parser::*;
-mod structs;
-use structs::*;
-mod template_management;
-use template_management::*;
-
+pub mod parser;
+pub use parser::*;
+pub mod structs;
+pub use structs::*;
+pub mod template_management;
+pub use template_management::*;

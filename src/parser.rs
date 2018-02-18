@@ -4,18 +4,20 @@ use structs::*;
 // TODO insert padding
 
 named!(pub message_parser<Message>,
-	do_parse!(
-		// TODO check length here too
+	complete!(do_parse!(
 		message_header : message_header_parser >>
-		sets : many0!(
-			complete!(do_parse!(
-				set_header : verify!(set_header_parser, |header : Set_Header| header.length > SET_HEADER_LENGTH) >>
-				data : length_data!(value!(set_header.length - SET_HEADER_LENGTH)) >>
-				(set_header, data)
-			))
+		sets : length_value!(
+			value!(message_header.length - MESSAGE_HEADER_LENGTH),
+			many0!(
+				complete!(do_parse!(
+					set_header : verify!(set_header_parser, |header : Set_Header| header.length > SET_HEADER_LENGTH) >>
+					data : length_data!(value!(set_header.length - SET_HEADER_LENGTH)) >>
+					(set_header, data)
+				))
+			)
 		) >>
 		(Message{ header : message_header, sets : sets })
-	)
+	))
 );
 
 named!(message_header_parser<Message_Header>,

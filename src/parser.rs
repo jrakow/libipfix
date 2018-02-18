@@ -3,6 +3,7 @@ use structs::*;
 
 // TODO insert padding
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 named!(pub message_parser<Message>,
 	complete!(do_parse!(
 		message_header : message_header_parser >>
@@ -20,6 +21,7 @@ named!(pub message_parser<Message>,
 	))
 );
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 named!(
 	message_header_parser<Message_Header>,
 	do_parse!(
@@ -38,6 +40,7 @@ named!(
 	)
 );
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 named!(
 	set_header_parser<Set_Header>,
 	do_parse!(
@@ -47,6 +50,7 @@ named!(
 	)
 );
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 named!(
 	field_specifier_parser<Field_Specifier>,
 	do_parse!(
@@ -64,6 +68,7 @@ named!(
 	)
 );
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 named_args!(pub template_records_parser(set_header : Set_Header)<Vec<Template_Record>>,
 	length_value!(
 		value!(set_header.length - SET_HEADER_LENGTH),
@@ -90,6 +95,7 @@ pub fn data_records_parser<'input>(
 	)
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 named_args!(template_record_parser(is_options_template : bool)<Template_Record>,
 	do_parse!(
 		header : call!(template_record_header_parser, is_options_template) >>
@@ -103,6 +109,7 @@ named_args!(template_record_parser(is_options_template : bool)<Template_Record>,
 	)
 );
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 named_args!(template_record_header_parser(is_options_template : bool)<Template_Record_Header>,
 	do_parse!(
 		template_id : u16!(Endianness::Big) >>

@@ -1,10 +1,10 @@
 #![allow(non_camel_case_types)]
 
-#[macro_use]
-extern crate nom;
+extern crate env_logger;
 #[macro_use]
 extern crate log;
-extern crate env_logger;
+#[macro_use]
+extern crate nom;
 
 pub mod parser;
 pub use parser::*;

@@ -4,7 +4,7 @@ pub const SET_HEADER_LENGTH : u16 = 4;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Message<'a> {
 	pub header : Message_Header,
-	pub sets : Vec<(Set_Header, &'a[u8])>,
+	pub sets : Vec<(Set_Header, &'a [u8])>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -38,7 +38,11 @@ pub struct Template_Record {
 
 impl Template_Record {
 	pub fn size(&self) -> u16 {
-		self.scope_fields.iter().chain(self.fields.iter()).map(|field| field.field_length).sum()
+		self.scope_fields
+			.iter()
+			.chain(self.fields.iter())
+			.map(|field| field.field_length)
+			.sum()
 	}
 }
 

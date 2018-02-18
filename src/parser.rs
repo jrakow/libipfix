@@ -20,18 +20,26 @@ named!(pub message_parser<Message>,
 	))
 );
 
-named!(message_header_parser<Message_Header>,
+named!(
+	message_header_parser<Message_Header>,
 	do_parse!(
 		/* version_number */ tag!([0x00, 0x0a]) >>
 		length : u16!(Endianness::Big) >>
 		export_time : u32!(Endianness::Big) >>
 		sequence_number : u32!(Endianness::Big) >>
 		observation_domain_id : u32!(Endianness::Big) >>
-		(Message_Header{ version_number : 0x000au16, length, export_time, sequence_number, observation_domain_id })
+		(Message_Header {
+				version_number : 0x000au16,
+				length,
+				export_time,
+				sequence_number,
+				observation_domain_id,
+		})
 	)
 );
 
-named!(set_header_parser<Set_Header>,
+named!(
+	set_header_parser<Set_Header>,
 	do_parse!(
 		set_id : u16!(Endianness::Big) >>
 		length : u16!(Endianness::Big) >>
@@ -39,15 +47,19 @@ named!(set_header_parser<Set_Header>,
 	)
 );
 
-named!(field_specifier_parser<Field_Specifier>,
+named!(
+	field_specifier_parser<Field_Specifier>,
 	do_parse!(
 		information_element_id : u16!(Endianness::Big) >>
 		field_length : u16!(Endianness::Big) >>
-		enterprise_number : cond!(information_element_id & 0x8000 != 0x0000, u32!(Endianness::Big)) >>
+		enterprise_number : cond!(
+			information_element_id & 0x8000 != 0x0000,
+			u32!(Endianness::Big)
+		) >>
 		(Field_Specifier{
 			information_element_id : information_element_id & 0x7fff,
 			field_length,
-			enterprise_number
+			enterprise_number,
 		})
 	)
 );
@@ -62,16 +74,19 @@ named_args!(pub template_records_parser(set_header : Set_Header)<Vec<Template_Re
 );
 
 // needs explicit lifetimes because reference to cache
-pub fn data_records_parser<'input>(input : &'input[u8], records_length : u16, template_size : u16) -> IResult<&'input[u8], Vec<Data_Record>> {
+pub fn data_records_parser<'input>(
+	input : &'input [u8],
+	records_length : u16,
+	template_size : u16,
+) -> IResult<&'input [u8], Vec<Data_Record>> {
 	length_value!(
 		input,
 		value!(records_length),
-		many1!(
-			complete!(map!(
-				take!(template_size),
-				|a : &[u8]| { Data_Record{ fields : a.to_vec() } }
-			))
-		)
+		many1!(complete!(map!(take!(template_size), |a : &[u8]| {
+			Data_Record {
+				fields : a.to_vec(),
+			}
+		})))
 	)
 }
 
@@ -135,29 +150,30 @@ mod tests {
 			},
 			sets : vec![
 				(
-					Set_Header{ set_id : 2u16, length : 20u16 },
+					Set_Header {
+						set_id : 2u16,
+						length : 20u16,
+					},
 					&[
-						0x01, 0x23, 0x45, 0x67,
+						0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67,
 						0x89, 0xab, 0xcd, 0xef,
-						0x01, 0x23, 0x45, 0x67,
-						0x89, 0xab, 0xcd, 0xef,
-					]
+					],
 				),
 				(
-					Set_Header{ set_id : 3u16, length : 20u16 },
+					Set_Header {
+						set_id : 3u16,
+						length : 20u16,
+					},
 					&[
 						0x89, 0xab, 0xcd, 0xef,
 						0x01, 0x23, 0x45, 0x67,
 						0x89, 0xab, 0xcd, 0xef,
 						0x01, 0x23, 0x45, 0x67,
-					]
+					],
 				),
-			]
+			],
 		};
-		assert_eq!(
-			message_parser(&data),
-			Ok((&[][..], res))
-		);
+		assert_eq!(message_parser(&data), Ok((&[][..], res)));
 	}
 
 	#[test]
@@ -175,32 +191,26 @@ mod tests {
 			sequence_number : 0xfedcba98u32,
 			observation_domain_id : 0xdeadbeefu32,
 		};
-		assert_eq!(
-			message_header_parser(&data),
-			Ok((&b""[..], res))
-		);
+		assert_eq!(message_header_parser(&data), Ok((&b""[..], res)));
 	}
 
 	#[test]
 	fn set_header_parser_test() {
 		let data : [u8; 4] = [
-			0x00, 0x02, 0x00, 4, // set id, set length
+			0x00, 0x02, 0x00, 4 // set id, set length
 		];
-		let res = Set_Header{
+		let res = Set_Header {
 			set_id : 2u16,
-			length : 4u16
+			length : 4u16,
 		};
-		assert_eq!(
-			set_header_parser(&data),
-			Ok((&[][..], res))
-		);
+		assert_eq!(set_header_parser(&data), Ok((&[][..], res)));
 	}
 
 	#[test]
 	fn template_records_parser_test() {
 		let set_header = Set_Header {
 			set_id : 3,
-			length : 50
+			length : 50,
 		};
 		let data : &[u8] = &[
 			1, 0, // template_id
@@ -226,54 +236,54 @@ mod tests {
 					scope_field_count : 0x0002,
 				},
 				scope_fields : vec![
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 0x015au16,
 						field_length : 4u16,
 						enterprise_number : None,
 					},
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 0x012fu16,
 						field_length : 2u16,
 						enterprise_number : None,
 					},
 				],
 				fields : vec![
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 0x0153u16,
 						field_length : 1u16,
 						enterprise_number : None,
 					},
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 0x0158u16,
 						field_length : 1u16,
 						enterprise_number : None,
 					},
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 0x0159u16,
 						field_length : 2u16,
 						enterprise_number : None,
 					},
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 0x00d2u16,
 						field_length : 6u16,
 						enterprise_number : None,
 					},
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 0x0156u16,
 						field_length : 8u16,
 						enterprise_number : None,
 					},
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 0x0157u16,
 						field_length : 8u16,
 						enterprise_number : None,
 					},
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 0x0155u16,
 						field_length : 0xffffu16,
 						enterprise_number : None,
 					},
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 0x0154u16,
 						field_length : 0xffffu16,
 						enterprise_number : None,
@@ -298,7 +308,7 @@ mod tests {
 			0x00, 0x07, 0x00, 0x02,
 		];
 		let res = vec![
-			Template_Record{
+			Template_Record {
 				header : Template_Record_Header {
 					template_id : 0x0102u16,
 					field_count : 0x0001u16,
@@ -306,14 +316,14 @@ mod tests {
 				},
 				scope_fields : vec![],
 				fields : vec![
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 7u16,
 						field_length : 2u16,
 						enterprise_number : None,
 					},
 				],
 			},
-			Template_Record{
+			Template_Record {
 				header : Template_Record_Header {
 					template_id : 0x0102u16,
 					field_count : 0x0001u16,
@@ -321,7 +331,7 @@ mod tests {
 				},
 				scope_fields : vec![],
 				fields : vec![
-					Field_Specifier{
+					Field_Specifier {
 						information_element_id : 7u16,
 						field_length : 2u16,
 						enterprise_number : None,
@@ -344,7 +354,7 @@ mod tests {
 			0x00, 0xd2, 0x00, 0x04,
 			0x81, 0x02, 0x00, 0x04, 0x00, 0x00, 0xC3, 0x3C,
 		];
-		let res = Template_Record{
+		let res = Template_Record {
 			header : Template_Record_Header {
 				template_id : 0x0102u16,
 				field_count : 0x0004u16,
@@ -352,32 +362,29 @@ mod tests {
 			},
 			scope_fields : vec![],
 			fields : vec![
-				Field_Specifier{
+				Field_Specifier {
 					information_element_id : 7u16,
 					field_length : 2u16,
 					enterprise_number : None,
 				},
-				Field_Specifier{
+				Field_Specifier {
 					information_element_id : 311u16,
 					field_length : 8u16,
 					enterprise_number : None,
 				},
-				Field_Specifier{
+				Field_Specifier {
 					information_element_id : 210u16,
 					field_length : 4,
 					enterprise_number : None,
 				},
-				Field_Specifier{
+				Field_Specifier {
 					information_element_id : 258u16,
 					field_length : 4,
 					enterprise_number : Some(0xC33C),
 				},
 			],
 		};
-		assert_eq!(
-			template_record_parser(&data, false),
-			Ok((&[][..], res))
-		);
+		assert_eq!(template_record_parser(&data, false), Ok((&[][..], res)));
 	}
 
 	#[test]
@@ -386,57 +393,45 @@ mod tests {
 			0x00, 0x07,
 			0x00, 0x02,
 		];
-		let res = Field_Specifier{
+		let res = Field_Specifier {
 			information_element_id : 7u16,
 			field_length : 2u16,
 			enterprise_number : None,
 		};
-		assert_eq!(
-			field_specifier_parser(&data),
-			Ok((&[][..], res))
-		);
+		assert_eq!(field_specifier_parser(&data), Ok((&[][..], res)));
 
 		let data : &[u8] = &[
 			0x01, 0x37,
 			0x00, 0x08,
 		];
-		let res = Field_Specifier{
+		let res = Field_Specifier {
 			information_element_id : 311u16,
 			field_length : 8u16,
 			enterprise_number : None,
 		};
-		assert_eq!(
-			field_specifier_parser(&data),
-			Ok((&[][..], res))
-		);
+		assert_eq!(field_specifier_parser(&data), Ok((&[][..], res)));
 
 		let data : &[u8] = &[
 			0x00, 0xd2,
 			0x00, 0x04,
 		];
-		let res = Field_Specifier{
+		let res = Field_Specifier {
 			information_element_id : 210u16,
 			field_length : 4,
 			enterprise_number : None,
 		};
-		assert_eq!(
-			field_specifier_parser(&data),
-			Ok((&[][..], res))
-		);
+		assert_eq!(field_specifier_parser(&data), Ok((&[][..], res)));
 
 		let data : &[u8] = &[
 			0x81, 0x02,
 			0x00, 0x04,
 			0x00, 0x00, 0xC3, 0x3C,
 		];
-		let res = Field_Specifier{
+		let res = Field_Specifier {
 			information_element_id : 258u16,
 			field_length : 4,
 			enterprise_number : Some(0xC33C),
 		};
-		assert_eq!(
-			field_specifier_parser(&data),
-			Ok((&[][..], res))
-		);
+		assert_eq!(field_specifier_parser(&data), Ok((&[][..], res)));
 	}
 }

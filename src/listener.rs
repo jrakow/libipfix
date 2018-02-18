@@ -46,11 +46,9 @@ pub fn main() {
 						Some(template) => template,
 					};
 
-					let opt = data_records_parser(
-						data,
-						set_header.length - SET_HEADER_LENGTH,
-						template.size(),
-					).ok();
+					let opt =
+						data_records_parser(data, set_header.length - SET_HEADER_LENGTH, template)
+							.ok();
 
 					if opt.is_none() || opt.as_ref().unwrap().0 == &b""[..] {
 						error!("failed to parse data set");

@@ -36,16 +36,6 @@ pub struct Template_Record {
 	pub fields : Vec<Field_Specifier>,
 }
 
-impl Template_Record {
-	pub fn size(&self) -> u16 {
-		self.scope_fields
-			.iter()
-			.chain(self.fields.iter())
-			.map(|field| field.field_length)
-			.sum()
-	}
-}
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Template_Record_Header {
 	pub template_id : u16,
@@ -55,5 +45,10 @@ pub struct Template_Record_Header {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Data_Record {
-	pub fields : Vec<u8>,
+	pub fields : Vec<Field>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Field {
+	pub value : Vec<u8>,
 }

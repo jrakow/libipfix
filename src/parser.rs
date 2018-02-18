@@ -80,14 +80,58 @@ named_args!(
 );
 
 named_args!(
-	pub data_records_parser(records_length : u16, template_size : u16)<Vec<Data_Record>>,
+	pub data_records_parser<'a>(
+		records_length : u16,
+		template : &Template_Record
+	)<Vec<Data_Record>>,
 	length_value!(
 		value!(records_length),
-		many1!(complete!(map!(take!(template_size), |a : &[u8]| {
-			Data_Record {
-				fields : a.to_vec(),
+		many1!(call!(data_record_parser, template))
+	)
+);
+
+pub fn data_record_parser<'input>(
+	input : &'input [u8],
+	template : &Template_Record,
+) -> IResult<&'input [u8], Data_Record> {
+	let mut input = input;
+	let mut fields = Vec::<Field>::default();
+
+	for specifier in &template.fields {
+		match information_element_parser(input, *specifier) {
+			Err(err) => {
+				return Err(err);
 			}
-		})))
+			Ok((rest, field)) => {
+				input = rest;
+				fields.push(field);
+			}
+		}
+	}
+	Ok((input, Data_Record { fields }))
+}
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+named_args!(
+	information_element_parser(specifier : Field_Specifier)<Field>,
+	do_parse!(
+		value : alt_complete!(
+			cond_reduce!(
+				specifier.field_length < 0xffffu16,
+				take!(specifier.field_length)
+			) |
+			information_element_variable_length_parser
+		) >>
+		(Field { value : value.to_vec() })
+	)
+);
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+named!(
+	information_element_variable_length_parser<&[u8]>,
+	alt_complete!(
+		length_data!(verify!(be_u8, |length| length < 255)) |
+		preceded!(tag!([255u8]), length_data!(u16!(Endianness::Big)))
 	)
 );
 
@@ -346,6 +390,83 @@ mod tests {
 		];
 		assert_eq!(
 			template_records_parser(&data, set_header),
+			Ok((&[][..], res))
+		);
+	}
+
+	#[test]
+	fn information_element_parser_test() {
+		let data : &[u8] = &[0x00, 0x00, 0x00, 0x00];
+		let res = Field {
+			value : vec![0x00, 0x00, 0x00, 0x00],
+		};
+		let specifier = Field_Specifier {
+			information_element_id : 210,
+			field_length : 4,
+			enterprise_number : None,
+		};
+		assert_eq!(
+			information_element_parser(&data, specifier),
+			Ok((&[][..], res))
+		);
+
+		let variable_length_specifier = Field_Specifier {
+			information_element_id : 210,
+			field_length : 0xffffu16,
+			enterprise_number : None,
+		};
+
+		let data : &[u8] = &[0x00];
+		let res = Field { value : vec![] };
+		assert_eq!(
+			information_element_parser(&data, variable_length_specifier),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[0x04, 0x00, 0x00, 0x00, 0x00];
+		let res = Field {
+			value : vec![0x00, 0x00, 0x00, 0x00],
+		};
+		assert_eq!(
+			information_element_parser(&data, variable_length_specifier),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[0xff, 0x00, 0x00];
+		let res = Field { value : vec![] };
+		assert_eq!(
+			information_element_parser(&data, variable_length_specifier),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[0xff, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00];
+		let res = Field {
+			value : vec![0x00, 0x00, 0x00, 0x00],
+		};
+		assert_eq!(
+			information_element_parser(&data, variable_length_specifier),
+			Ok((&[][..], res))
+		);
+
+		let mut vector = vec![0xff, 0x04, 0x01];
+		vector.extend(vec![0x00; 1025]);
+		let data : &[u8] = &vector[..];
+		let res = Field {
+			value : vec![0x00; 1025],
+		};
+		assert_eq!(
+			information_element_parser(&data, variable_length_specifier),
+			Ok((&[][..], res))
+		);
+
+		let mut vector = vec![0xff, 0xff, 0xff];
+		vector.extend(vec![0x00; 0xffff]);
+		let data : &[u8] = &vector[..];
+		let res = Field {
+			value : vec![0x00; 0xffff],
+		};
+		assert_eq!(
+			information_element_parser(&data, variable_length_specifier),
 			Ok((&[][..], res))
 		);
 	}

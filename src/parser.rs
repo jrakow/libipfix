@@ -69,7 +69,8 @@ named!(
 );
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-named_args!(pub template_records_parser(set_header : Set_Header)<Vec<Template_Record>>,
+named_args!(
+	pub template_records_parser(set_header : Set_Header)<Vec<Template_Record>>,
 	length_value!(
 		value!(set_header.length - SET_HEADER_LENGTH),
 		many1!(complete!(
@@ -96,7 +97,8 @@ pub fn data_records_parser<'input>(
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-named_args!(template_record_parser(is_options_template : bool)<Template_Record>,
+named_args!(
+	template_record_parser(is_options_template : bool)<Template_Record>,
 	do_parse!(
 		header : call!(template_record_header_parser, is_options_template) >>
 		scope_fields : count!(
@@ -110,7 +112,8 @@ named_args!(template_record_parser(is_options_template : bool)<Template_Record>,
 );
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-named_args!(template_record_header_parser(is_options_template : bool)<Template_Record_Header>,
+named_args!(
+	template_record_header_parser(is_options_template : bool)<Template_Record_Header>,
 	do_parse!(
 		template_id : u16!(Endianness::Big) >>
 		field_count : u16!(Endianness::Big) >>

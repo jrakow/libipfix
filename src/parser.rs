@@ -79,14 +79,9 @@ named_args!(
 	)
 );
 
-// needs explicit lifetimes because reference to cache
-pub fn data_records_parser<'input>(
-	input : &'input [u8],
-	records_length : u16,
-	template_size : u16,
-) -> IResult<&'input [u8], Vec<Data_Record>> {
+named_args!(
+	pub data_records_parser(records_length : u16, template_size : u16)<Vec<Data_Record>>,
 	length_value!(
-		input,
 		value!(records_length),
 		many1!(complete!(map!(take!(template_size), |a : &[u8]| {
 			Data_Record {
@@ -94,7 +89,7 @@ pub fn data_records_parser<'input>(
 			}
 		})))
 	)
-}
+);
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 named_args!(

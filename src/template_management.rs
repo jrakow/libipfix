@@ -9,6 +9,8 @@ pub struct Template_Cache {
 
 impl Template_Cache {
 	pub fn update_with(&mut self, template : Template_Record) {
+		use std::collections::hash_map::Entry::*;
+
 		assert!(template.header.template_id >= 256);
 		assert!(template.header.scope_field_count as usize == template.scope_fields.len());
 		assert!(
@@ -28,26 +30,28 @@ impl Template_Cache {
 				);
 			}
 		} else {
-			// template definition
-			if self.templates.contains_key(&template.header.template_id) {
-				if self.templates.get(&template.header.template_id).unwrap() == &template {
+			match self.templates.entry(template.header.template_id) {
+				Occupied(ref entry) if &template == entry.get() => {
 					// ok, template known
 					info!(
 						"identical definition of known template with id {}",
 						template.header.template_id
 					);
-				} else {
+				}
+				Occupied(entry) => {
 					warn!(
 						"spurious redefinition of known template with id {}",
 						template.header.template_id
 					);
 					info!("removing both templates to avoid ambiguity");
-					self.templates.remove(&template.header.template_id);
+					entry.remove();
 				}
-			} else {
-				info!("adding template with id {}", template.header.template_id);
-				self.templates.insert(template.header.template_id, template);
-			}
+				Vacant(entry) => {
+					// unknown template definition
+					info!("adding template with id {}", template.header.template_id);
+					entry.insert(template);
+				}
+			};
 		}
 	}
 

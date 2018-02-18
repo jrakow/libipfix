@@ -37,7 +37,7 @@ pub fn main() {
 						cache.update_with(template);
 					}
 				}
-				256...65535 => {
+				256...0xffff => {
 					let template = match cache.lookup(set_header.set_id) {
 						None => {
 							warn!("received data set without known template");

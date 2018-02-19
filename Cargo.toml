@@ -3,15 +3,6 @@ name = "libipfix"
 version = "0.1.0"
 authors = ["Julius Rakow <julius@familie-rakow.de>"]
 
-[lib]
-name = "libipfix"
-path = "src/lib.rs"
-
-[[bin]]
-name = "listener"
-path = "src/listener.rs"
-
 [dependencies]
-env_logger = "0.5"
 log = "0.4"
 nom = "4.0.0-beta1"

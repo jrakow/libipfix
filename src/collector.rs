@@ -1,12 +1,4 @@
-extern crate libipfix;
-use libipfix::*;
-
-extern crate env_logger;
-#[macro_use]
-extern crate log;
-
-use std::fs::File;
-use std::io::prelude::*;
+use super::*;
 
 pub fn collect(input : &[u8]) {
 	let mut input = input.clone();
@@ -66,17 +58,4 @@ pub fn collect(input : &[u8]) {
 		}
 		message_num += 1;
 	}
-}
-
-pub fn main() {
-	env_logger::init();
-
-	let mut input_vec = Vec::<u8>::default();
-	File::open("/dev/stdin")
-		.unwrap()
-		.read_to_end(&mut input_vec)
-		.unwrap();
-	let input_vec = input_vec;
-
-	collect(&input_vec[..]);
 }

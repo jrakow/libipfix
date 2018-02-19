@@ -8,17 +8,9 @@ extern crate log;
 use std::fs::File;
 use std::io::prelude::*;
 
-pub fn main() {
-	env_logger::init();
+pub fn collect(input : &[u8]) {
+	let mut input = input.clone();
 	let mut cache = Template_Cache::default();
-
-	let mut input_vec = Vec::<u8>::default();
-	File::open("/dev/stdin")
-		.unwrap()
-		.read_to_end(&mut input_vec)
-		.unwrap();
-	let input_vec = input_vec;
-	let mut input = &input_vec[..];
 
 	let mut message_num = 0;
 	while input != &b""[..] {
@@ -74,4 +66,17 @@ pub fn main() {
 		}
 		message_num += 1;
 	}
+}
+
+pub fn main() {
+	env_logger::init();
+
+	let mut input_vec = Vec::<u8>::default();
+	File::open("/dev/stdin")
+		.unwrap()
+		.read_to_end(&mut input_vec)
+		.unwrap();
+	let input_vec = input_vec;
+
+	collect(&input_vec[..]);
 }

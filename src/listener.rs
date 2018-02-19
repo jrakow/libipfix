@@ -1,5 +1,5 @@
-extern crate lib_ipfix_rs;
-use lib_ipfix_rs::*;
+extern crate libipfix;
+use libipfix::*;
 
 extern crate env_logger;
 #[macro_use]

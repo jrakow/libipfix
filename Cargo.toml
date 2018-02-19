@@ -1,10 +1,10 @@
 [package]
-name = "ipfix_rs"
+name = "libipfix"
 version = "0.1.0"
 authors = ["Julius Rakow <julius@familie-rakow.de>"]
 
 [lib]
-name = "lib_ipfix_rs"
+name = "libipfix"
 path = "src/lib.rs"
 
 [[bin]]

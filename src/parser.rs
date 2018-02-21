@@ -91,8 +91,23 @@ named_args!(
 	)
 );
 
-const SEMANTIC_ERROR : u32 = 0xFFFFFFFF;
-pub const SEMANTIC_ERROR_KIND : ErrorKind<u32> = ErrorKind::Custom(SEMANTIC_ERROR);
+pub mod error_kind {
+	use nom::ErrorKind;
+
+	#[repr(u32)]
+	enum semantic_error {
+		INFORMATION_ELEMENT_UNKNOWN,
+		BOOL_INVALID,
+		STRING_NOT_UTF8,
+	}
+
+	pub const INFORMATION_ELEMENT_UNKNOWN : ErrorKind<u32> =
+		ErrorKind::Custom(semantic_error::INFORMATION_ELEMENT_UNKNOWN as u32);
+	pub const BOOL_INVALID : ErrorKind<u32> =
+		ErrorKind::Custom(semantic_error::BOOL_INVALID as u32);
+	pub const STRING_NOT_UTF8 : ErrorKind<u32> =
+		ErrorKind::Custom(semantic_error::STRING_NOT_UTF8 as u32);
+}
 
 pub fn data_record_parser<'input>(
 	input : &'input [u8],
@@ -102,8 +117,9 @@ pub fn data_record_parser<'input>(
 	let mut fields = Vec::<Data_Value>::default();
 
 	for field in &template.fields {
-		let information_element = lookup(field.information_element_id)
-			.ok_or(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND)))?; // return if Err
+		let information_element = lookup(field.information_element_id).ok_or(Err::Error(
+			error_position!(input, error_kind::INFORMATION_ELEMENT_UNKNOWN),
+		))?; // return if Err
 
 		match information_element_parser(
 			input,
@@ -151,7 +167,7 @@ pub fn information_element_parser(
 			1 => match be_u8(input) {
 				Ok((rest, 1u8)) => Ok((rest, Data_Value::boolean(true))),
 				Ok((rest, 2u8)) => Ok((rest, Data_Value::boolean(false))),
-				Ok(_) => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+				Ok(_) => Err(Err::Error(error_position!(input, error_kind::BOOL_INVALID))),
 				Err(e) => Err(e),
 			},
 			_ => panic!(),
@@ -173,7 +189,10 @@ pub fn information_element_parser(
 			match string_result {
 				Ok((input, Ok(s))) => Ok((input, Data_Value::string(s))),
 				// cast fail is semantic error
-				Ok((input, Err(_))) => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+				Ok((input, Err(_))) => Err(Err::Error(error_position!(
+					input,
+					error_kind::STRING_NOT_UTF8
+				))),
 				Err(e) => Err(e),
 			}
 		}

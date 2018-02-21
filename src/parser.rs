@@ -274,6 +274,7 @@ named_args!(
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use nom;
 
 	#[test]
 	fn message_parser_test() {
@@ -610,6 +611,43 @@ mod tests {
 	fn float_parser_test() {
 		// TODO
 		// Testing would be easier with hexadecimal floating point literals.
+	}
+
+	#[test]
+	fn bool_parser_literal() {
+		use Data_Value::*;
+
+		let data : &[u8] = &[0x00];
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::boolean, 1),
+			Err(Err::Error(nom::Context::Code(
+				data,
+				error_kind::BOOL_INVALID
+			)))
+		);
+
+		let data : &[u8] = &[0x01];
+		let res = boolean(true);
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::boolean, 1),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[0x02];
+		let res = boolean(false);
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::boolean, 1),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[0x03];
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::boolean, 1),
+			Err(Err::Error(nom::Context::Code(
+				data,
+				error_kind::BOOL_INVALID
+			)))
+		);
 	}
 
 	#[test]

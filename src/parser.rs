@@ -133,19 +133,19 @@ pub fn information_element_parser(
 			2 => map!(input, be_u16, |u| Data_Value::unsigned16(u)),
 			4 => map!(input, be_u32, |u| Data_Value::unsigned32(u)),
 			8 => map!(input, be_u64, |u| Data_Value::unsigned64(u)),
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		signed8 | signed16 | signed32 | signed64 => match length {
 			1 => map!(input, be_i8, |u| Data_Value::signed8(u)),
 			2 => map!(input, be_i16, |u| Data_Value::signed16(u)),
 			4 => map!(input, be_i32, |u| Data_Value::signed32(u)),
 			8 => map!(input, be_i64, |u| Data_Value::signed64(u)),
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		float32 | float64 => match length {
 			4 => map!(input, be_f32, |u| Data_Value::float32(u)),
 			8 => map!(input, be_f64, |u| Data_Value::float64(u)),
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		boolean => match length {
 			1 => match be_u8(input) {
@@ -154,11 +154,11 @@ pub fn information_element_parser(
 				Ok(_) => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
 				Err(e) => Err(e),
 			},
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		macAddress => match length {
 			6 => map!(input, take!(6), |slice| Data_Value::macAddress(slice.to_vec())),
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		octetArray => match length {
 			0xffffu16 => information_element_variable_length_parser(input),
@@ -179,31 +179,31 @@ pub fn information_element_parser(
 		}
 		dateTimeSeconds => match length {
 			4 => map!(input, be_u32, |u| Data_Value::dateTimeSeconds(u)),
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		dateTimeMilliseconds => match length {
 			8 => map!(input, be_u64, |u| Data_Value::dateTimeMilliseconds(u)),
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		dateTimeMicroseconds => match length {
 			8 => map!(input, tuple!(be_u32, be_u32), |(seconds, fraction)| {
 				Data_Value::dateTimeMicroseconds(seconds, fraction & 0xFFFFF800) // ignore lower 11 Bit of fraction
 			}),
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		dateTimeNanoseconds => match length {
 			8 => map!(input, tuple!(be_u32, be_u32), |(seconds, fraction)| {
 				Data_Value::dateTimeNanoseconds(seconds, fraction)
 			}),
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		ipv4Address => match length {
 			4 => map!(input, take!(4), |slice| Data_Value::ipv4Address(slice.to_vec())),
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		ipv6Address => match length {
 			16 => map!(input, take!(16), |slice| Data_Value::ipv6Address(slice.to_vec())),
-			_ => Err(Err::Error(error_position!(input, SEMANTIC_ERROR_KIND))),
+			_ => panic!(),
 		},
 		basicList => panic!("type not implemented"),
 		subTemplateList => panic!("type not implemented"),

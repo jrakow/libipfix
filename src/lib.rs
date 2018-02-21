@@ -7,6 +7,8 @@ extern crate nom;
 
 pub mod collector;
 pub use collector::*;
+pub mod information_element;
+pub use information_element::*;
 pub mod parser;
 pub use parser::*;
 pub mod structs;

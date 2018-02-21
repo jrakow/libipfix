@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-
+use information_element;
+use std;
 use structs::*;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Template_Cache {
-	templates : HashMap<u16, Template_Record>,
+	templates : std::collections::HashMap<u16, Template_Record>,
 }
 
 impl Template_Cache {
@@ -145,4 +145,191 @@ mod tests {
 			fields : vec![],
 		});
 	}
+}
+
+pub enum Verify_Template_Error {
+	Scope_Field_Count_Invalid(u16),
+	Field_Count_Invalid(u16),
+	Scope_Field_Count_Mismatch {
+		count_header : u16,
+		len : usize,
+	},
+	Field_Count_Mismatch {
+		field_count_header : u16,
+		scope_field_count_header : u16,
+		fields_len : usize,
+	},
+	Information_Element_Id_Not_Found(u16),
+	Field_Length_Invalid(u16),
+	Field_Length_Mismatch {
+		length : u16,
+		type_ : Abstract_Data_Type,
+	},
+	Field_Length_Not_Implemented {
+		length : u16,
+		type_ : Abstract_Data_Type,
+	},
+	Type_Not_Implemented(Abstract_Data_Type),
+}
+
+impl std::fmt::Display for Verify_Template_Error {
+	fn fmt(&self, f : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+		use Verify_Template_Error::*;
+
+		match self {
+			&Scope_Field_Count_Invalid(c) => write!(f, "scope field count {} is invalid", c),
+			&Field_Count_Invalid(c) => write!(f, "scope field count {} is invalid", c),
+			&Scope_Field_Count_Mismatch { count_header, len } => write!(
+				f,
+				"scope field count is {}, but template has {} scope fields",
+				count_header, len
+			),
+			&Field_Count_Mismatch {
+				field_count_header,
+				scope_field_count_header,
+				fields_len,
+			} => write!(
+				f,
+				"field count is {} and scope field count is {}.\
+				 Expected {} non-scope fields, but template has {} non-scope fields",
+				field_count_header,
+				scope_field_count_header,
+				field_count_header - scope_field_count_header,
+				fields_len,
+			),
+			&Information_Element_Id_Not_Found(id) => {
+				write!(f, "information element with id {} not found", id)
+			}
+			&Field_Length_Invalid(len) => write!(f, "field length {} is invalid", len),
+			&Field_Length_Mismatch { length, type_ } => write!(
+				f,
+				"type {} may not be encoded with length {}",
+				type_, length
+			),
+			&Field_Length_Not_Implemented { length, type_ } => {
+				write!(f, "length {} not implemented for type {}", type_, length)
+			}
+			&Type_Not_Implemented(type_) => write!(f, "type {} not implemented", type_),
+		}
+	}
+}
+
+pub fn verify_template(template : &Template_Record) -> Result<(), Verify_Template_Error> {
+	use Abstract_Data_Type::*;
+	use Verify_Template_Error::*;
+
+	if template.header.scope_field_count == 0 {
+		return Err(Scope_Field_Count_Invalid(template.header.scope_field_count));
+	}
+	if template.header.field_count == 0 {
+		return Err(Field_Count_Invalid(template.header.field_count));
+	}
+
+	if template.header.scope_field_count as usize != template.scope_fields.len() {
+		return Err(Scope_Field_Count_Mismatch {
+			count_header : template.header.scope_field_count,
+			len : template.scope_fields.len(),
+		});
+	}
+	if template.header.field_count as usize - template.header.scope_field_count as usize
+		!= template.fields.len()
+	{
+		return Err(Field_Count_Mismatch {
+			field_count_header : template.header.field_count,
+			scope_field_count_header : template.header.scope_field_count,
+			fields_len : template.fields.len(),
+		});
+	}
+
+	for field in template.scope_fields.iter().chain(template.fields.iter()) {
+		let information_element = information_element::lookup(field.information_element_id);
+		if information_element.is_none() {
+			return Err(Information_Element_Id_Not_Found(
+				field.information_element_id,
+			));
+		}
+		let information_element = information_element.unwrap();
+
+		if field.field_length <= 0 {
+			return Err(Field_Length_Invalid(field.field_length));
+		}
+
+		let type_ = information_element.abstract_data_type;
+		let length = field.field_length;
+
+		// check length
+		let error : Result<(), Verify_Template_Error> = match type_ {
+			// different lengths not implemented
+			unsigned8 | signed8 => match length {
+				1 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			unsigned16 | signed16 => match length {
+				1 | 2 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			unsigned32 | signed32 => match length {
+				1 | 2 | 4 => Ok(()),
+				3 => Err(Field_Length_Not_Implemented { length, type_ }),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			unsigned64 | signed64 => match length {
+				1 | 2 | 4 | 8 => Ok(()),
+				3 | 5 | 6 | 7 => Err(Field_Length_Not_Implemented { length, type_ }),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			float32 => match length {
+				4 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			float64 => match length {
+				4 | 8 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			boolean => match length {
+				1 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			macAddress => match length {
+				6 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			octetArray => Ok(()),
+			string => Ok(()),
+			dateTimeSeconds => match length {
+				4 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			dateTimeMilliseconds => match length {
+				8 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			dateTimeMicroseconds => match length {
+				8 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			dateTimeNanoseconds => match length {
+				8 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			ipv4Address => match length {
+				4 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			ipv6Address => match length {
+				16 => Ok(()),
+				_ => Err(Field_Length_Mismatch { length, type_ }),
+			},
+			basicList => Err(Type_Not_Implemented(type_)),
+			subTemplateList => Err(Type_Not_Implemented(type_)),
+			subTemplateMultiList => Err(Type_Not_Implemented(type_)),
+		};
+
+		match error {
+			Ok(_) => {}
+			Err(e) => return Err(e),
+		};
+	}
+
+	Ok(())
 }

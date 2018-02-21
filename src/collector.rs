@@ -19,7 +19,10 @@ pub fn collect(input : &[u8]) {
 				2 | 3 => {
 					let templates = template_records_parser(data, set_header).unwrap().1;
 					for template in &templates {
-						cache.update_with(template.clone());
+						match verify_template(&template) {
+							Ok(_) => cache.update_with(template.clone()),
+							Err(e) => warn!("{}", e),
+						}
 					}
 					trace!(
 						"message {}: set {}: {:?}",

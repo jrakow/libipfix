@@ -1,3 +1,5 @@
+use std;
+
 pub const MESSAGE_HEADER_LENGTH : u16 = 16;
 pub const SET_HEADER_LENGTH : u16 = 4;
 
@@ -51,4 +53,38 @@ pub struct Data_Record {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Field {
 	pub value : Vec<u8>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Abstract_Data_Type {
+	unsigned8,
+	unsigned16,
+	unsigned32,
+	unsigned64,
+	signed8,
+	signed16,
+	signed32,
+	signed64,
+	float32,
+	float64,
+	boolean,
+	macAddress,
+	octetArray,
+	string,
+	dateTimeSeconds,
+	dateTimeMilliseconds,
+	dateTimeMicroseconds,
+	dateTimeNanoseconds,
+	ipv4Address,
+	ipv6Address,
+	// TODO
+	basicList,
+	subTemplateList,
+	subTemplateMultiList,
+}
+
+impl std::fmt::Display for Abstract_Data_Type {
+	fn fmt(&self, f : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+		write!(f, "{:?}", self)
+	}
 }

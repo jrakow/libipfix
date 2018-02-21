@@ -499,7 +499,115 @@ mod tests {
 	}
 
 	#[test]
-	fn information_element_parser_test() {
+	fn unsigned_integer_parser_test() {
+		use Data_Value::*;
+
+		let data : &[u8] = &[0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff];
+
+		let res = unsigned8(0x88);
+		let field_length = 1;
+		for type_ in [
+			Abstract_Data_Type::unsigned8,
+			Abstract_Data_Type::unsigned16,
+			Abstract_Data_Type::unsigned32,
+			Abstract_Data_Type::unsigned64,
+		].iter()
+		{
+			assert_eq!(
+				information_element_parser(&data, *type_, field_length),
+				Ok((&data[1..8], res.clone()))
+			);
+		}
+
+		let res = unsigned16(0x8899);
+		let field_length = 2;
+		for type_ in [
+			Abstract_Data_Type::unsigned16,
+			Abstract_Data_Type::unsigned32,
+			Abstract_Data_Type::unsigned64,
+		].iter()
+		{
+			assert_eq!(
+				information_element_parser(&data, *type_, field_length),
+				Ok((&data[2..8], res.clone()))
+			);
+		}
+
+		let res = unsigned32(0x8899aabb);
+		let field_length = 4;
+		for type_ in [
+			Abstract_Data_Type::unsigned32,
+			Abstract_Data_Type::unsigned64,
+		].iter()
+		{
+			assert_eq!(
+				information_element_parser(&data, *type_, field_length),
+				Ok((&data[4..8], res.clone()))
+			);
+		}
+
+		let res = unsigned64(0x8899aabbccddeeff);
+		let field_length = 8;
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::unsigned64, field_length),
+			Ok((&[][..], res))
+		);
+	}
+
+	#[test]
+	fn signed_integer_parser_test() {
+		use Data_Value::*;
+
+		let data : &[u8] = &[0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee];
+
+		let res = signed8(0x77);
+		let field_length = 1;
+		for type_ in [
+			Abstract_Data_Type::signed8,
+			Abstract_Data_Type::signed16,
+			Abstract_Data_Type::signed32,
+			Abstract_Data_Type::signed64,
+		].iter()
+		{
+			assert_eq!(
+				information_element_parser(&data, *type_, field_length),
+				Ok((&data[1..8], res.clone()))
+			);
+		}
+
+		let res = signed16(0x7788);
+		let field_length = 2;
+		for type_ in [
+			Abstract_Data_Type::signed16,
+			Abstract_Data_Type::signed32,
+			Abstract_Data_Type::signed64,
+		].iter()
+		{
+			assert_eq!(
+				information_element_parser(&data, *type_, field_length),
+				Ok((&data[2..8], res.clone()))
+			);
+		}
+
+		let res = signed32(0x778899aa);
+		let field_length = 4;
+		for type_ in [Abstract_Data_Type::signed32, Abstract_Data_Type::signed64].iter() {
+			assert_eq!(
+				information_element_parser(&data, *type_, field_length),
+				Ok((&data[4..8], res.clone()))
+			);
+		}
+
+		let res = signed64(0x778899aabbccddee);
+		let field_length = 8;
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::signed64, field_length),
+			Ok((&[][..], res))
+		);
+	}
+
+	#[test]
+	fn octet_array_parser_test() {
 		use Data_Value::*;
 
 		let data : &[u8] = &[0x00, 0x00, 0x00, 0x00];

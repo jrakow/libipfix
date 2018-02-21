@@ -607,6 +607,12 @@ mod tests {
 	}
 
 	#[test]
+	fn float_parser_test() {
+		// TODO
+		// Testing would be easier with hexadecimal floating point literals.
+	}
+
+	#[test]
 	fn octet_array_parser_test() {
 		use Data_Value::*;
 

@@ -7,6 +7,7 @@ pub struct Information_Element {
 	pub abstract_data_type : Abstract_Data_Type,
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn lookup(id : u16) -> Option<Information_Element> {
 	let tuple = match id {
 		// 0 Reserved

@@ -80,16 +80,27 @@ named_args!(
 	)
 );
 
-named_args!(
-	pub data_records_parser<'a>(
-		records_length : u16,
-		template : &Template_Record
-	)<Vec<Data_Record>>,
-	length_value!(
-		value!(records_length),
-		many1!(call!(data_record_parser, template))
-	)
-);
+pub fn data_records_parser<'input>(
+	input : &'input [u8],
+	records_length : u16,
+	template : &Template_Record
+) -> IResult<&'input [u8], Vec<Data_Record>> {
+	let (mut input, unused) = input.split_at(records_length as usize);
+
+	// do-while loop
+	// at least 1 data record
+	let mut records = Vec::<Data_Record>::default();
+	loop {
+		let (rest, record) = data_record_parser(input, &template)?;
+		input = rest;
+		records.push(record);
+
+		if input.len() == 0 {
+			break;
+		}
+	}
+	Ok((unused, records))
+}
 
 pub mod error_kind {
 	use nom::ErrorKind;

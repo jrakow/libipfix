@@ -8,52 +8,77 @@ pub fn collect(input : &[u8]) {
 	while input != &b""[..] {
 		let mut set_num = 0;
 
-		let result = message_parser(&input[..]).unwrap();
+		let result = match message_parser(&input[..]) {
+			Ok(o) => o,
+			Err(_) => {
+				error!("message {} unparseable", message_num);
+				continue;
+			}
+		};
+
 		input = result.0;
 		let message = result.1;
 
-		debug!("message {}: {:?}", message_num, message.header);
+		trace!("message header {}: {:?}", message_num, message.header);
 
 		for (set_header, data) in message.sets {
+			trace!("set header {}.{}: {:?}", message_num, set_num, set_header);
 			match set_header.set_id {
 				2 | 3 => {
-					let templates = template_records_parser(data, set_header).unwrap().1;
+					let templates = match template_records_parser(data, set_header) {
+						Ok((_, t)) => t,
+						Err(_) => {
+							error!("template set {}.{} unparseable", message_num, set_num);
+							continue;
+						}
+					};
 					for template in &templates {
-						match verify_template(&template) {
-							Ok(_) => cache.update_with(template.clone()),
-							Err(e) => warn!("{}", e),
+						trace!(
+							"template {}.{}.{}: {:?}",
+							message_num,
+							set_num,
+							template.header.template_id,
+							template
+						);
+						if let Err(e) = verify_template(&template) {
+							error!("{:?}", e);
+							continue;
+						}
+						if let Err(e) = cache.update_with(template.clone()) {
+							error!("{:?}", e);
+							continue;
 						}
 					}
-					trace!(
-						"message {}: set {}: {:?}",
-						message_num,
-						set_num,
-						(set_header, templates)
-					);
 				}
 				256...0xffff => {
 					let template = match cache.lookup(set_header.set_id) {
 						None => {
-							warn!("received data set without known template");
+							error!("received data set without known template");
 							continue;
 						}
 						Some(template) => template,
 					};
 
-					let opt =
-						data_records_parser(data, set_header.length - SET_HEADER_LENGTH, template)
-							.ok();
-
-					if opt.is_none() || opt.as_ref().unwrap().0 != &b""[..] {
-						error!("failed to parse data set");
-						continue;
+					let records = match data_records_parser(
+						data,
+						set_header.length - SET_HEADER_LENGTH,
+						template,
+					) {
+						Ok(o) => o,
+						Err(e) => {
+							error!("{:?}", e);
+							continue;
+						}
+					};
+					for (record_num, record) in records.1.iter().enumerate() {
+						trace!(
+							"data record {}.{}.{}: {:?}",
+							message_num,
+							set_num,
+							record_num,
+							record
+						);
 					}
-					trace!(
-						"message {}: set {}: {:?}",
-						message_num,
-						set_num,
-						(set_header, opt.unwrap().1)
-					);
 				}
 				id => error!("received set with reserved set id {}", id),
 			}

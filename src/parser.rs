@@ -83,7 +83,7 @@ named_args!(
 pub fn data_records_parser<'input>(
 	input : &'input [u8],
 	records_length : u16,
-	template : &Template_Record
+	template : &Template_Record,
 ) -> IResult<&'input [u8], Vec<Data_Record>> {
 	let (mut input, unused) = input.split_at(records_length as usize);
 

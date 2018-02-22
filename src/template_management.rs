@@ -7,8 +7,21 @@ pub struct Template_Cache {
 	templates : std::collections::HashMap<u16, Template_Record>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Update_Ok {
+	Addition,
+	Redefinition,
+	Withdrawal,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Update_Err {
+	Redefinition_Different,
+	Withdrawal_Unknown,
+}
+
 impl Template_Cache {
-	pub fn update_with(&mut self, template : Template_Record) {
+	pub fn update_with(&mut self, template : Template_Record) -> Result<Update_Ok, Update_Err> {
 		use std::collections::hash_map::Entry::*;
 
 		assert!(template.header.template_id >= 256);
@@ -20,38 +33,23 @@ impl Template_Cache {
 
 		if template.header.field_count == 0 {
 			// template withdrawal
-			if self.templates
+			self.templates
 				.remove(&template.header.template_id)
-				.is_none()
-			{
-				warn!(
-					"spurious withdrawal of unknown template with id {}",
-					template.header.template_id
-				);
-			}
+				.map(|_| Update_Ok::Withdrawal)
+				.ok_or(Update_Err::Withdrawal_Unknown)
 		} else {
 			match self.templates.entry(template.header.template_id) {
-				Occupied(ref entry) if &template == entry.get() => {
-					// ok, template known
-					info!(
-						"identical definition of known template with id {}",
-						template.header.template_id
-					);
-				}
+				Occupied(ref entry) if &template == entry.get() => Ok(Update_Ok::Redefinition),
 				Occupied(entry) => {
-					warn!(
-						"spurious redefinition of known template with id {}",
-						template.header.template_id
-					);
-					info!("removing both templates to avoid ambiguity");
+					// template != entry
 					entry.remove();
+					Err(Update_Err::Redefinition_Different)
 				}
 				Vacant(entry) => {
-					// unknown template definition
-					info!("adding template with id {}", template.header.template_id);
 					entry.insert(template);
+					Ok(Update_Ok::Addition)
 				}
-			};
+			}
 		}
 	}
 
@@ -81,11 +79,14 @@ mod tests {
 			scope_fields : vec![],
 			fields : vec![DUMMY_FIELD],
 		};
-		cache.update_with(template.clone());
+		assert_eq!(cache.update_with(template.clone()), Ok(Update_Ok::Addition));
 		assert_eq!(cache.lookup(256).unwrap(), &template);
 
 		// identical redefinition
-		cache.update_with(template.clone());
+		assert_eq!(
+			cache.update_with(template.clone()),
+			Ok(Update_Ok::Redefinition)
+		);
 		assert_eq!(cache.lookup(256).unwrap(), &template);
 
 		let removal = Template_Record {
@@ -97,22 +98,53 @@ mod tests {
 			scope_fields : vec![],
 			fields : vec![],
 		};
-		cache.update_with(removal);
+		assert_eq!(
+			cache.update_with(removal.clone()),
+			Ok(Update_Ok::Withdrawal)
+		);
+		assert!(cache.lookup(256).is_none());
+	}
+
+	#[test]
+	fn different_redefinition() {
+		let mut cache = Template_Cache::default();
+
+		let template = Template_Record {
+			header : Template_Record_Header {
+				template_id : 256,
+				field_count : 1,
+				scope_field_count : 0,
+			},
+			scope_fields : vec![],
+			fields : vec![DUMMY_FIELD],
+		};
+		let mut template2 = template.clone();
+		assert_eq!(cache.update_with(template.clone()), Ok(Update_Ok::Addition));
+		template2.header.field_count = 2;
+		template2.fields.push(DUMMY_FIELD);
+		assert_eq!(
+			cache.update_with(template2.clone()),
+			Err(Update_Err::Redefinition_Different)
+		);
+
 		assert!(cache.lookup(256).is_none());
 	}
 
 	#[test]
 	fn spurious_withdrawal() {
 		let mut cache = Template_Cache::default();
-		cache.update_with(Template_Record {
-			header : Template_Record_Header {
-				template_id : 256,
-				field_count : 0,
-				scope_field_count : 0,
-			},
-			scope_fields : vec![],
-			fields : vec![],
-		});
+		assert_eq!(
+			cache.update_with(Template_Record {
+				header : Template_Record_Header {
+					template_id : 256,
+					field_count : 0,
+					scope_field_count : 0,
+				},
+				scope_fields : vec![],
+				fields : vec![],
+			}),
+			Err(Update_Err::Withdrawal_Unknown)
+		);
 		assert!(cache.lookup(256).is_none());
 	}
 
@@ -120,7 +152,7 @@ mod tests {
 	#[should_panic(expected = "assertion failed")]
 	fn panic_on_nontemplate() {
 		let mut cache = Template_Cache::default();
-		cache.update_with(Template_Record {
+		let _res = cache.update_with(Template_Record {
 			header : Template_Record_Header {
 				template_id : 0,
 				field_count : 0,
@@ -135,7 +167,7 @@ mod tests {
 	#[should_panic(expected = "assertion failed")]
 	fn panic_on_wrong_size() {
 		let mut cache = Template_Cache::default();
-		cache.update_with(Template_Record {
+		let _res = cache.update_with(Template_Record {
 			header : Template_Record_Header {
 				template_id : 0,
 				field_count : 1,
@@ -147,6 +179,7 @@ mod tests {
 	}
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Verify_Template_Error {
 	Scope_Field_Count_Invalid(u16),
 	Field_Count_Invalid(u16),
@@ -218,9 +251,6 @@ pub fn verify_template(template : &Template_Record) -> Result<(), Verify_Templat
 	use Abstract_Data_Type::*;
 	use Verify_Template_Error::*;
 
-	if template.header.scope_field_count == 0 {
-		return Err(Scope_Field_Count_Invalid(template.header.scope_field_count));
-	}
 	if template.header.field_count == 0 {
 		return Err(Field_Count_Invalid(template.header.field_count));
 	}

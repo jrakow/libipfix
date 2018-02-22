@@ -556,6 +556,13 @@ mod tests {
 	}
 
 	#[test]
+	#[should_panic(expected = "explicit panic")]
+	fn unsigned_integer_parser_fail() {
+		let data : &[u8] = &[0x01, 0x02, 0x3, 0x04];
+		let _res = information_element_parser(&data, Abstract_Data_Type::unsigned32, 3);
+	}
+
+	#[test]
 	fn signed_integer_parser_test() {
 		use Data_Value::*;
 
@@ -608,9 +615,23 @@ mod tests {
 	}
 
 	#[test]
+	#[should_panic(expected = "explicit panic")]
+	fn signed_integer_parser_fail() {
+		let data : &[u8] = &[0x01, 0x02, 0x3, 0x04];
+		let _res = information_element_parser(&data, Abstract_Data_Type::signed32, 3);
+	}
+
+	#[test]
 	fn float_parser_test() {
 		// TODO
 		// Testing would be easier with hexadecimal floating point literals.
+	}
+
+	#[test]
+	#[should_panic(expected = "explicit panic")]
+	fn float_parser_fail() {
+		let data : &[u8] = &[0x01, 0x02, 0x3, 0x04];
+		let _res = information_element_parser(&data, Abstract_Data_Type::float32, 3);
 	}
 
 	#[test]
@@ -651,6 +672,13 @@ mod tests {
 	}
 
 	#[test]
+	#[should_panic(expected = "explicit panic")]
+	fn bool_parser_fail() {
+		let data : &[u8] = &[0x01];
+		let _res = information_element_parser(&data, Abstract_Data_Type::boolean, 0);
+	}
+
+	#[test]
 	fn mac_address_parser_test() {
 		use Data_Value::*;
 
@@ -659,6 +687,13 @@ mod tests {
 			information_element_parser(&data, Abstract_Data_Type::macAddress, 6),
 			Ok((&[][..], macAddress(data.to_vec())))
 		);
+	}
+
+	#[test]
+	#[should_panic(expected = "explicit panic")]
+	fn mac_address_parser_fail() {
+		let data : &[u8] = &[0x01, 0x02, 0x3, 0x04, 0x05, 0x06];
+		let _res = information_element_parser(&data, Abstract_Data_Type::macAddress, 4);
 	}
 
 	#[test]

@@ -184,7 +184,9 @@ pub fn information_element_parser(
 			_ => panic!(),
 		},
 		macAddress => match length {
-			6 => map!(input, take!(6), |slice| Data_Value::macAddress(slice.to_vec())),
+			6 => map!(input, take!(6), |slice| Data_Value::macAddress(
+				slice.to_vec()
+			)),
 			_ => panic!(),
 		},
 		octetArray => match length {
@@ -228,11 +230,15 @@ pub fn information_element_parser(
 			_ => panic!(),
 		},
 		ipv4Address => match length {
-			4 => map!(input, take!(4), |slice| Data_Value::ipv4Address(slice.to_vec())),
+			4 => map!(input, take!(4), |slice| Data_Value::ipv4Address(
+				slice.to_vec()
+			)),
 			_ => panic!(),
 		},
 		ipv6Address => match length {
-			16 => map!(input, take!(16), |slice| Data_Value::ipv6Address(slice.to_vec())),
+			16 => map!(input, take!(16), |slice| Data_Value::ipv6Address(
+				slice.to_vec()
+			)),
 			_ => panic!(),
 		},
 		basicList => panic!("type not implemented"),

@@ -758,6 +758,43 @@ mod tests {
 	}
 
 	#[test]
+	fn string_parser_test() {
+		let data : &[u8] = &[240, 159, 146, 150];
+		let res = Data_Value::string("💖".to_string());
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::string, 4),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[4, 240, 159, 146, 150];
+		let res = Data_Value::string("💖".to_string());
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::string, 0xffffu16),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[240, 0, 146, 151]; // modified
+		let _res = Data_Value::string("💖".to_string());
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::string, 4),
+			Err(Err::Error(nom::Context::Code(
+				&[][..],
+				error_kind::STRING_NOT_UTF8
+			)))
+		);
+
+		let data : &[u8] = &[4, 240, 0, 146, 151]; // modified
+		let _res = Data_Value::string("💖".to_string());
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::string, 0xffffu16),
+			Err(Err::Error(nom::Context::Code(
+				&[][..],
+				error_kind::STRING_NOT_UTF8
+			)))
+		);
+	}
+
+	#[test]
 	fn template_record_parser_test() {
 		let data : &[u8] = &[
 			0x01, 0x02, 0x00, 0x04, // template record header

@@ -27,10 +27,10 @@ named!(
 	message_header_parser<Message_Header>,
 	do_parse!(
 		/* version_number */ tag!([0x00, 0x0a]) >>
-		length : u16!(Endianness::Big) >>
-		export_time : u32!(Endianness::Big) >>
-		sequence_number : u32!(Endianness::Big) >>
-		observation_domain_id : u32!(Endianness::Big) >>
+		length : be_u16 >>
+		export_time : be_u32 >>
+		sequence_number : be_u32 >>
+		observation_domain_id : be_u32 >>
 		(Message_Header {
 				version_number : 0x000au16,
 				length,
@@ -45,8 +45,8 @@ named!(
 named!(
 	set_header_parser<Set_Header>,
 	do_parse!(
-		set_id : u16!(Endianness::Big) >>
-		length : u16!(Endianness::Big) >>
+		set_id : be_u16 >>
+		length : be_u16 >>
 		(Set_Header{ set_id, length })
 	)
 );
@@ -55,11 +55,11 @@ named!(
 named!(
 	field_specifier_parser<Field_Specifier>,
 	do_parse!(
-		information_element_id : u16!(Endianness::Big) >>
-		field_length : u16!(Endianness::Big) >>
+		information_element_id : be_u16 >>
+		field_length : be_u16 >>
 		enterprise_number : cond!(
 			information_element_id & 0x8000 != 0x0000,
-			u32!(Endianness::Big)
+			be_u32
 		) >>
 		(Field_Specifier{
 			information_element_id : information_element_id & 0x7fff,
@@ -235,7 +235,7 @@ named!(
 	information_element_variable_length_parser<&[u8]>,
 	alt_complete!(
 		length_data!(verify!(be_u8, |length| length < 255)) |
-		preceded!(tag!([255u8]), length_data!(u16!(Endianness::Big)))
+		preceded!(tag!([255u8]), length_data!(be_u16))
 	)
 );
 
@@ -258,12 +258,12 @@ named_args!(
 named_args!(
 	template_record_header_parser(is_options_template : bool)<Template_Record_Header>,
 	do_parse!(
-		template_id : u16!(Endianness::Big) >>
-		field_count : u16!(Endianness::Big) >>
+		template_id : be_u16 >>
+		field_count : be_u16 >>
 		scope_field_count : map!(
 				cond!(
 					is_options_template && field_count != 0,// withdrawal has no scope_field_count
-					u16!(Endianness::Big)
+					be_u16
 				),
 				|option| option.unwrap_or(0)
 		) >>

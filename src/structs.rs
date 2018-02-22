@@ -116,19 +116,19 @@ impl std::fmt::Display for Data_Value {
 	fn fmt(&self, f : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
 		use Data_Value::*;
 
-		match self {
-			&unsigned8(u) => write!(f, "{}", u),
-			&unsigned16(u) => write!(f, "{}", u),
-			&unsigned32(u) | &dateTimeSeconds(u) => write!(f, "{}", u),
-			&unsigned64(u) | &dateTimeMilliseconds(u) => write!(f, "{}", u),
-			&signed8(i) => write!(f, "{}", i),
-			&signed16(i) => write!(f, "{}", i),
-			&signed32(i) => write!(f, "{}", i),
-			&signed64(i) => write!(f, "{}", i),
-			&float32(g) => write!(f, "{}", g),
-			&float64(g) => write!(f, "{}", g),
-			&boolean(b) => write!(f, "{}", b),
-			&macAddress(ref arr) => {
+		match *self {
+			unsigned8(u) => write!(f, "{}", u),
+			unsigned16(u) => write!(f, "{}", u),
+			unsigned32(u) | dateTimeSeconds(u) => write!(f, "{}", u),
+			unsigned64(u) | dateTimeMilliseconds(u) => write!(f, "{}", u),
+			signed8(i) => write!(f, "{}", i),
+			signed16(i) => write!(f, "{}", i),
+			signed32(i) => write!(f, "{}", i),
+			signed64(i) => write!(f, "{}", i),
+			float32(g) => write!(f, "{}", g),
+			float64(g) => write!(f, "{}", g),
+			boolean(b) => write!(f, "{}", b),
+			macAddress(ref arr) => {
 				for i in (1..6).rev() {
 					match write!(f, "{:X}-", arr[i]) {
 						Ok(_) => {}
@@ -137,9 +137,9 @@ impl std::fmt::Display for Data_Value {
 				}
 				write!(f, "{:X}", arr[0])
 			}
-			&octetArray(ref arr) => write!(f, "{:?}", arr),
-			&string(ref s) => write!(f, "{}", s),
-			&dateTimeMicroseconds(sec, frac) | &dateTimeNanoseconds(sec, frac) => write!(
+			octetArray(ref arr) => write!(f, "{:?}", arr),
+			string(ref s) => write!(f, "{}", s),
+			dateTimeMicroseconds(sec, frac) | dateTimeNanoseconds(sec, frac) => write!(
 				f,
 				r#"{{
 					"seconds" : {},
@@ -147,7 +147,7 @@ impl std::fmt::Display for Data_Value {
 				}}"#,
 				sec, frac
 			),
-			&ipv4Address(ref arr) => {
+			ipv4Address(ref arr) => {
 				for i in (1..4).rev() {
 					match write!(f, "{}.", arr[i]) {
 						Ok(_) => {}
@@ -156,7 +156,7 @@ impl std::fmt::Display for Data_Value {
 				}
 				write!(f, "{}", arr[0])
 			}
-			&ipv6Address(ref arr) => {
+			ipv6Address(ref arr) => {
 				for i in (1..16).rev() {
 					match write!(f, "{:x}:", arr[i]) {
 						Ok(_) => {}
@@ -165,9 +165,7 @@ impl std::fmt::Display for Data_Value {
 				}
 				write!(f, "{:x}", arr[0])
 			}
-			&basicList => Err(std::fmt::Error),
-			&subTemplateList => Err(std::fmt::Error),
-			&subTemplateMultiList => Err(std::fmt::Error),
+			basicList | subTemplateList | subTemplateMultiList => Err(std::fmt::Error),
 		}
 	}
 }

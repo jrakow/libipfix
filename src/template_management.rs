@@ -209,15 +209,15 @@ impl std::fmt::Display for Verify_Template_Error {
 	fn fmt(&self, f : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
 		use Verify_Template_Error::*;
 
-		match self {
-			&Scope_Field_Count_Invalid(c) => write!(f, "scope field count {} is invalid", c),
-			&Field_Count_Invalid(c) => write!(f, "scope field count {} is invalid", c),
-			&Scope_Field_Count_Mismatch { count_header, len } => write!(
+		match *self {
+			Scope_Field_Count_Invalid(c) => write!(f, "scope field count {} is invalid", c),
+			Field_Count_Invalid(c) => write!(f, "field count {} is invalid", c),
+			Scope_Field_Count_Mismatch { count_header, len } => write!(
 				f,
 				"scope field count is {}, but template has {} scope fields",
 				count_header, len
 			),
-			&Field_Count_Mismatch {
+			Field_Count_Mismatch {
 				field_count_header,
 				scope_field_count_header,
 				fields_len,
@@ -230,19 +230,19 @@ impl std::fmt::Display for Verify_Template_Error {
 				field_count_header - scope_field_count_header,
 				fields_len,
 			),
-			&Information_Element_Id_Not_Found(id) => {
+			Information_Element_Id_Not_Found(id) => {
 				write!(f, "information element with id {} not found", id)
 			}
-			&Field_Length_Invalid(len) => write!(f, "field length {} is invalid", len),
-			&Field_Length_Mismatch { length, type_ } => write!(
+			Field_Length_Invalid(len) => write!(f, "field length {} is invalid", len),
+			Field_Length_Mismatch { length, type_ } => write!(
 				f,
 				"type {} may not be encoded with length {}",
 				type_, length
 			),
-			&Field_Length_Not_Implemented { length, type_ } => {
+			Field_Length_Not_Implemented { length, type_ } => {
 				write!(f, "length {} not implemented for type {}", type_, length)
 			}
-			&Type_Not_Implemented(type_) => write!(f, "type {} not implemented", type_),
+			Type_Not_Implemented(type_) => write!(f, "type {} not implemented", type_),
 		}
 	}
 }
@@ -280,7 +280,7 @@ pub fn verify_template(template : &Template_Record) -> Result<(), Verify_Templat
 		}
 		let information_element = information_element.unwrap();
 
-		if field.field_length <= 0 {
+		if field.field_length == 0 {
 			return Err(Field_Length_Invalid(field.field_length));
 		}
 
@@ -290,7 +290,7 @@ pub fn verify_template(template : &Template_Record) -> Result<(), Verify_Templat
 		// check length
 		let error : Result<(), Verify_Template_Error> = match type_ {
 			// different lengths not implemented
-			unsigned8 | signed8 => match length {
+			unsigned8 | signed8 | boolean => match length {
 				1 => Ok(()),
 				_ => Err(Field_Length_Mismatch { length, type_ }),
 			},
@@ -308,7 +308,7 @@ pub fn verify_template(template : &Template_Record) -> Result<(), Verify_Templat
 				3 | 5 | 6 | 7 => Err(Field_Length_Not_Implemented { length, type_ }),
 				_ => Err(Field_Length_Mismatch { length, type_ }),
 			},
-			float32 => match length {
+			float32 | dateTimeSeconds | ipv4Address => match length {
 				4 => Ok(()),
 				_ => Err(Field_Length_Mismatch { length, type_ }),
 			},
@@ -316,43 +316,20 @@ pub fn verify_template(template : &Template_Record) -> Result<(), Verify_Templat
 				4 | 8 => Ok(()),
 				_ => Err(Field_Length_Mismatch { length, type_ }),
 			},
-			boolean => match length {
-				1 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
 			macAddress => match length {
 				6 => Ok(()),
 				_ => Err(Field_Length_Mismatch { length, type_ }),
 			},
-			octetArray => Ok(()),
-			string => Ok(()),
-			dateTimeSeconds => match length {
-				4 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			dateTimeMilliseconds => match length {
+			octetArray | string => Ok(()),
+			dateTimeMilliseconds | dateTimeMicroseconds | dateTimeNanoseconds => match length {
 				8 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			dateTimeMicroseconds => match length {
-				8 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			dateTimeNanoseconds => match length {
-				8 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			ipv4Address => match length {
-				4 => Ok(()),
 				_ => Err(Field_Length_Mismatch { length, type_ }),
 			},
 			ipv6Address => match length {
 				16 => Ok(()),
 				_ => Err(Field_Length_Mismatch { length, type_ }),
 			},
-			basicList => Err(Type_Not_Implemented(type_)),
-			subTemplateList => Err(Type_Not_Implemented(type_)),
-			subTemplateMultiList => Err(Type_Not_Implemented(type_)),
+			basicList | subTemplateList | subTemplateMultiList => Err(Type_Not_Implemented(type_)),
 		};
 
 		match error {

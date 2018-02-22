@@ -1,7 +1,7 @@
 use super::*;
 
 pub fn collect(input : &[u8]) {
-	let mut input = input.clone();
+	let mut input = input;
 	let mut cache = Template_Cache::default();
 
 	let mut message_num = 0;
@@ -40,7 +40,7 @@ pub fn collect(input : &[u8]) {
 							template.header.template_id,
 							template
 						);
-						if let Err(e) = verify_template(&template) {
+						if let Err(e) = verify_template(template) {
 							error!("{:?}", e);
 							continue;
 						}

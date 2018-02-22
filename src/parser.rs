@@ -91,11 +91,11 @@ pub fn data_records_parser<'input>(
 	// at least 1 data record
 	let mut records = Vec::<Data_Record>::default();
 	loop {
-		let (rest, record) = data_record_parser(input, &template)?;
+		let (rest, record) = data_record_parser(input, template)?;
 		input = rest;
 		records.push(record);
 
-		if input.len() == 0 {
+		if input.is_empty() {
 			break;
 		}
 	}
@@ -128,7 +128,7 @@ pub fn data_record_parser<'input>(
 	let mut fields = Vec::<Data_Value>::default();
 
 	for field in &template.fields {
-		let information_element = lookup(field.information_element_id).ok_or(Err::Error(
+		let information_element = lookup(field.information_element_id).ok_or_else(|| Err::Error(
 			error_position!(input, error_kind::INFORMATION_ELEMENT_UNKNOWN),
 		))?; // return if Err
 
@@ -156,22 +156,22 @@ pub fn information_element_parser(
 
 	match abstract_data_type {
 		unsigned8 | unsigned16 | unsigned32 | unsigned64 => match length {
-			1 => map!(input, be_u8, |u| Data_Value::unsigned8(u)),
-			2 => map!(input, be_u16, |u| Data_Value::unsigned16(u)),
-			4 => map!(input, be_u32, |u| Data_Value::unsigned32(u)),
-			8 => map!(input, be_u64, |u| Data_Value::unsigned64(u)),
+			1 => map!(input, be_u8, Data_Value::unsigned8),
+			2 => map!(input, be_u16, Data_Value::unsigned16),
+			4 => map!(input, be_u32, Data_Value::unsigned32),
+			8 => map!(input, be_u64, Data_Value::unsigned64),
 			_ => panic!(),
 		},
 		signed8 | signed16 | signed32 | signed64 => match length {
-			1 => map!(input, be_i8, |u| Data_Value::signed8(u)),
-			2 => map!(input, be_i16, |u| Data_Value::signed16(u)),
-			4 => map!(input, be_i32, |u| Data_Value::signed32(u)),
-			8 => map!(input, be_i64, |u| Data_Value::signed64(u)),
+			1 => map!(input, be_i8, Data_Value::signed8),
+			2 => map!(input, be_i16, Data_Value::signed16),
+			4 => map!(input, be_i32, Data_Value::signed32),
+			8 => map!(input, be_i64, Data_Value::signed64),
 			_ => panic!(),
 		},
 		float32 | float64 => match length {
-			4 => map!(input, be_f32, |u| Data_Value::float32(u)),
-			8 => map!(input, be_f64, |u| Data_Value::float64(u)),
+			4 => map!(input, be_f32, Data_Value::float32),
+			8 => map!(input, be_f64, Data_Value::float64),
 			_ => panic!(),
 		},
 		boolean => match length {
@@ -210,16 +210,16 @@ pub fn information_element_parser(
 			}
 		}
 		dateTimeSeconds => match length {
-			4 => map!(input, be_u32, |u| Data_Value::dateTimeSeconds(u)),
+			4 => map!(input, be_u32, Data_Value::dateTimeSeconds),
 			_ => panic!(),
 		},
 		dateTimeMilliseconds => match length {
-			8 => map!(input, be_u64, |u| Data_Value::dateTimeMilliseconds(u)),
+			8 => map!(input, be_u64, Data_Value::dateTimeMilliseconds),
 			_ => panic!(),
 		},
 		dateTimeMicroseconds => match length {
 			8 => map!(input, tuple!(be_u32, be_u32), |(seconds, fraction)| {
-				Data_Value::dateTimeMicroseconds(seconds, fraction & 0xFFFFF800) // ignore lower 11 Bit of fraction
+				Data_Value::dateTimeMicroseconds(seconds, fraction & 0xFFFF_F800) // ignore lower 11 Bit of fraction
 			}),
 			_ => panic!(),
 		},

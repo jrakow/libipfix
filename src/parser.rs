@@ -651,6 +651,17 @@ mod tests {
 	}
 
 	#[test]
+	fn mac_address_parser_test() {
+		use Data_Value::*;
+
+		let data : &[u8] = &[0x01, 0x02, 0x3, 0x04, 0x05, 0x06];
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::macAddress, 6),
+			Ok((&[][..], macAddress(data.to_vec())))
+		);
+	}
+
+	#[test]
 	fn octet_array_parser_test() {
 		use Data_Value::*;
 

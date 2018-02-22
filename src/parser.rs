@@ -614,7 +614,7 @@ mod tests {
 	}
 
 	#[test]
-	fn bool_parser_literal() {
+	fn bool_parser_test() {
 		use Data_Value::*;
 
 		let data : &[u8] = &[0x00];

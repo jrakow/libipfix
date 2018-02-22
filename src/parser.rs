@@ -500,6 +500,40 @@ mod tests {
 	}
 
 	#[test]
+	fn data_records_parser_test() {
+		let template = Template_Record {
+			header : Template_Record_Header {
+				template_id : 256,
+				scope_field_count : 0,
+				field_count : 1,
+			},
+			scope_fields : vec![],
+			fields : vec![
+				Field_Specifier {
+					information_element_id : 210,
+					field_length : 4,
+					enterprise_number : None,
+				},
+			],
+		};
+		let data : &[u8] = &[0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77];
+		assert_eq!(
+			data_records_parser(data, 8, &template),
+			Ok((
+				&[][..],
+				vec![
+					Data_Record {
+						fields : vec![Data_Value::octetArray(vec![0x00, 0x11, 0x22, 0x33])],
+					},
+					Data_Record {
+						fields : vec![Data_Value::octetArray(vec![0x44, 0x55, 0x66, 0x77])],
+					},
+				]
+			)),
+		);
+	}
+
+	#[test]
 	fn unsigned_integer_parser_test() {
 		use Data_Value::*;
 

@@ -669,6 +669,12 @@ mod tests {
 				error_kind::BOOL_INVALID
 			)))
 		);
+
+		let data : &[u8] = &[];
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::boolean, 1),
+			Err(Err::Incomplete(Needed::Size(1)))
+		);
 	}
 
 	#[test]

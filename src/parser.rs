@@ -27,7 +27,7 @@ named!(
 	message_header_parser<Message_Header>,
 	do_parse!(
 		/* version_number */ tag!([0x00, 0x0a]) >>
-		length : be_u16 >>
+		length : verify!(be_u16, |length| length >= MESSAGE_HEADER_LENGTH) >>
 		export_time : be_u32 >>
 		sequence_number : be_u32 >>
 		observation_domain_id : be_u32 >>

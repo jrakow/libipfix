@@ -120,7 +120,7 @@ pub mod error_kind {
 		ErrorKind::Custom(semantic_error::STRING_NOT_UTF8 as u32);
 }
 
-pub fn data_record_parser<'input>(
+fn data_record_parser<'input>(
 	input : &'input [u8],
 	template : &Template_Record,
 ) -> IResult<&'input [u8], Data_Record> {
@@ -147,7 +147,7 @@ pub fn data_record_parser<'input>(
 	Ok((input, Data_Record { fields }))
 }
 
-pub fn information_element_parser(
+fn information_element_parser(
 	input : &[u8],
 	abstract_data_type : Abstract_Data_Type,
 	length : u16,

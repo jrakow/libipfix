@@ -85,7 +85,7 @@ pub fn data_records_parser<'input>(
 	records_length : u16,
 	template : &Template_Record,
 ) -> IResult<&'input [u8], Vec<Data_Record>> {
-	let (mut input, unused) = input.split_at(records_length as usize);
+	let (rest_after_records, mut input) = take!(input, records_length as usize)?;
 
 	// do-while loop
 	// at least 1 data record
@@ -99,7 +99,7 @@ pub fn data_records_parser<'input>(
 			break;
 		}
 	}
-	Ok((unused, records))
+	Ok((rest_after_records, records))
 }
 
 pub mod error_kind {

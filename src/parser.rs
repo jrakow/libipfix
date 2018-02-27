@@ -548,6 +548,11 @@ mod tests {
 				]
 			)),
 		);
+
+		assert_eq!(
+			data_records_parser(&[][..], 4, &template),
+			Err(Err::Incomplete(Needed::Size(4)))
+		);
 	}
 
 	#[test]

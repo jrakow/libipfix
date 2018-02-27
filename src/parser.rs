@@ -277,13 +277,13 @@ named_args!(
 	do_parse!(
 		template_id : be_u16 >>
 		field_count : be_u16 >>
-		scope_field_count : map!(
+		scope_field_count : verify!(map!(
 				cond!(
 					is_options_template && field_count != 0,// withdrawal has no scope_field_count
 					be_u16
 				),
 				|option| option.unwrap_or(0)
-		) >>
+		), |scf| field_count >= scf) >>
 		(Template_Record_Header{ template_id, field_count, scope_field_count })
 	)
 );

@@ -9,5 +9,5 @@ fuzz_target!(|data: &[u8]| {
 		set_id : 3,
 		length : 256,
 	};
-	let _res = template_records_parser(input, data);
+	let _res = template_records_parser(data, set_header);
 });

@@ -12,3 +12,15 @@ fn message_parser_fuzz_test() {
 #[test]
 fn data_records_parser_fuzz_test() {
 }
+
+#[test]
+fn template_records_parser_fuzz_test() {
+	let set_header = Set_Header {
+		set_id : 3,
+		length : 256,
+	};
+	let _res = template_records_parser(
+		include_bytes!("fuzz_results/minimized-from-7fa7c999c258a01dabd846a7bc49ec3dd9bab049"),
+		set_header,
+	);
+}

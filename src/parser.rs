@@ -128,9 +128,12 @@ fn data_record_parser<'input>(
 	let mut fields = Vec::<Data_Value>::default();
 
 	for field in &template.fields {
-		let information_element = lookup(field.information_element_id).ok_or_else(|| Err::Error(
-			error_position!(input, error_kind::INFORMATION_ELEMENT_UNKNOWN),
-		))?; // return if Err
+		let information_element = lookup(field.information_element_id).ok_or_else(|| {
+			Err::Error(error_position!(
+				input,
+				error_kind::INFORMATION_ELEMENT_UNKNOWN
+			))
+		})?; // return if Err
 
 		match information_element_parser(
 			input,

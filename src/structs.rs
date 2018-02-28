@@ -1,6 +1,8 @@
 use std;
 pub use std::net::{Ipv4Addr, Ipv6Addr};
 
+use serde::ser::{Serialize, SerializeMap, SerializeTupleStruct, Serializer};
+
 pub const MESSAGE_HEADER_LENGTH : u16 = 16;
 pub const SET_HEADER_LENGTH : u16 = 4;
 
@@ -113,44 +115,188 @@ pub enum Data_Value {
 	subTemplateMultiList,
 }
 
-impl std::fmt::Display for Data_Value {
-	fn fmt(&self, f : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+impl Serialize for Data_Value {
+	fn serialize<S>(&self, s : S) -> Result<S::Ok, S::Error>
+	where
+		S : Serializer,
+	{
 		use Data_Value::*;
 
-		match *self {
-			unsigned8(u) => write!(f, "{}", u),
-			unsigned16(u) => write!(f, "{}", u),
-			unsigned32(u) | dateTimeSeconds(u) => write!(f, "{}", u),
-			unsigned64(u) | dateTimeMilliseconds(u) => write!(f, "{}", u),
-			signed8(i) => write!(f, "{}", i),
-			signed16(i) => write!(f, "{}", i),
-			signed32(i) => write!(f, "{}", i),
-			signed64(i) => write!(f, "{}", i),
-			float32(g) => write!(f, "{}", g),
-			float64(g) => write!(f, "{}", g),
-			boolean(b) => write!(f, "{}", b),
-			macAddress(ref arr) => {
-				for i in (1..6).rev() {
-					match write!(f, "{:X}-", arr[i]) {
-						Ok(_) => {}
-						Err(e) => return Err(e),
-					}
-				}
-				write!(f, "{:X}", arr[0])
+		match self {
+			&unsigned8(u) => s.serialize_u8(u),
+			&unsigned16(u) => s.serialize_u16(u),
+			&unsigned32(u) | &dateTimeSeconds(u) => s.serialize_u32(u),
+			&unsigned64(u) | &dateTimeMilliseconds(u) => s.serialize_u64(u),
+			&signed8(u) => s.serialize_i8(u),
+			&signed16(u) => s.serialize_i16(u),
+			&signed32(u) => s.serialize_i32(u),
+			&signed64(u) => s.serialize_i64(u),
+			&float32(u) => s.serialize_f32(u),
+			&float64(u) => s.serialize_f64(u),
+			&boolean(u) => s.serialize_bool(u),
+			&macAddress(ref addr) => s.serialize_str(&format!(
+				"{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}",
+				addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
+			)),
+			&octetArray(ref arr) => s.serialize_bytes(&arr),
+			&string(ref st) => s.serialize_str(&st),
+			&dateTimeMicroseconds(sec, frac) | &dateTimeNanoseconds(sec, frac) => {
+				let mut ts = s.serialize_tuple_struct("", 2)?;
+				ts.serialize_field(&sec)?;
+				ts.serialize_field(&frac)?;
+				ts.end()
 			}
-			octetArray(ref arr) => write!(f, "{:?}", arr),
-			string(ref s) => write!(f, "{}", s),
-			dateTimeMicroseconds(sec, frac) | dateTimeNanoseconds(sec, frac) => write!(
-				f,
-				r#"{{
-					"seconds" : {},
-					"fraction" : {}
-				}}"#,
-				sec, frac
-			),
-			ipv4Address(ref addr) => write!(f, "{}", addr),
-			ipv6Address(ref addr) => write!(f, "{}", addr),
-			basicList | subTemplateList | subTemplateMultiList => Err(std::fmt::Error),
+			&ipv4Address(addr) => s.serialize_str(&format!("{}", addr)),
+			&ipv6Address(addr) => s.serialize_str(&format!("{}", addr)),
+			// TODO
+			&basicList | &subTemplateList | &subTemplateMultiList => unimplemented!(),
 		}
+	}
+}
+
+pub struct Typed_Data_Record<'a> {
+	data : &'a Data_Record,
+	template : &'a Template_Record,
+}
+
+impl<'a> Serialize for Typed_Data_Record<'a> {
+	fn serialize<S>(&self, s : S) -> Result<S::Ok, S::Error>
+	where
+		S : Serializer,
+	{
+		let mut map = s.serialize_map(Some(self.template.fields.len()))?;
+
+		for (specifier, value) in self.template
+			.scope_fields
+			.iter()
+			.chain(self.template.fields.iter())
+			.zip(self.data.fields.iter())
+		{
+			map.serialize_key(&specifier.information_element_id)?;
+			map.serialize_value(value)?;
+		}
+		map.end()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	extern crate serde_json;
+	use self::serde_json::to_string;
+
+	use super::*;
+
+	#[test]
+	pub fn data_value_json_test() {
+		use Data_Value::*;
+
+		assert_eq!(to_string(&unsigned8(255)).unwrap(), "255");
+		assert_eq!(to_string(&unsigned16(65535)).unwrap(), "65535");
+		assert_eq!(to_string(&unsigned32(4294967295)).unwrap(), "4294967295");
+		assert_eq!(
+			to_string(&unsigned64(18446744073709551615)).unwrap(),
+			"18446744073709551615"
+		);
+
+		assert_eq!(to_string(&signed8(-5)).unwrap(), "-5");
+		assert_eq!(to_string(&signed16(-500)).unwrap(), "-500");
+		assert_eq!(to_string(&signed32(-500000000)).unwrap(), "-500000000");
+		assert_eq!(
+			to_string(&signed64(-5000000000000)).unwrap(),
+			"-5000000000000"
+		);
+
+		assert_eq!(to_string(&float32(32.0)).unwrap(), "32.0");
+		assert_eq!(to_string(&float32(64.0)).unwrap(), "64.0");
+
+		assert_eq!(to_string(&boolean(true)).unwrap(), "true");
+		assert_eq!(to_string(&boolean(false)).unwrap(), "false");
+
+		assert_eq!(
+			to_string(&macAddress([0x00, 0x01, 0x02, 0x03, 0x04, 0x05].to_vec())).unwrap(),
+			"\"00-01-02-03-04-05\""
+		);
+		assert_eq!(
+			to_string(&octetArray([0x00, 0x01, 0x02, 0x03, 0x04, 0x05].to_vec())).unwrap(),
+			"[0,1,2,3,4,5]"
+		);
+
+		assert_eq!(to_string(&string("💖".to_string())).unwrap(), "\"💖\"");
+
+		assert_eq!(to_string(&dateTimeSeconds(3600)).unwrap(), "3600");
+		assert_eq!(
+			to_string(&dateTimeMilliseconds(3_600_000)).unwrap(),
+			"3600000"
+		);
+
+		assert_eq!(
+			to_string(&dateTimeMicroseconds(3600, 1)).unwrap(),
+			"[3600,1]"
+		);
+		assert_eq!(
+			to_string(&dateTimeNanoseconds(3600, 1)).unwrap(),
+			"[3600,1]"
+		);
+
+		assert_eq!(
+			to_string(&ipv4Address(std::net::Ipv4Addr::new(127, 0, 0, 1))).unwrap(),
+			"\"127.0.0.1\""
+		);
+		assert_eq!(
+			to_string(&ipv6Address(std::net::Ipv6Addr::new(
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				1
+			))).unwrap(),
+			"\"::1\""
+		);
+		/* TODO
+		basicList,
+		subTemplateList,
+		subTemplateMultiList,
+		*/
+	}
+
+	#[test]
+	pub fn data_record_json_test() {
+		let template = Template_Record {
+			header : Template_Record_Header {
+				template_id : 256,
+				field_count : 4,
+				scope_field_count : 0,
+			},
+			fields : vec![
+				Field_Specifier {
+					information_element_id : 210,
+					field_length : 4,
+					enterprise_number : None,
+				},
+				Field_Specifier {
+					information_element_id : 210,
+					field_length : 4,
+					enterprise_number : None,
+				},
+			],
+			scope_fields : vec![],
+		};
+		let record = Data_Record {
+			fields : vec![
+				Data_Value::octetArray(vec![0x00, 0x00, 0x00, 0x00]),
+				Data_Value::octetArray(vec![0x00, 0x00, 0x00, 0x00]),
+			],
+		};
+		let typed = Typed_Data_Record {
+			template : &template,
+			data : &record,
+		};
+		assert_eq!(
+			serde_json::to_string(&typed).unwrap(),
+			"{\"210\":[0,0,0,0],\"210\":[0,0,0,0]}"
+		);
 	}
 }

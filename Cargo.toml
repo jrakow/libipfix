@@ -6,6 +6,8 @@ authors = ["Julius Rakow <julius@familie-rakow.de>"]
 [dependencies]
 log = "0.4"
 nom = "4.0.0-beta1"
+serde = "1"
 
 [dev-dependencies]
 env_logger = "0.5"
+serde_json = "1"

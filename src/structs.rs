@@ -208,7 +208,7 @@ mod tests {
 		);
 
 		assert_eq!(to_string(&float32(32.0)).unwrap(), "32.0");
-		assert_eq!(to_string(&float32(64.0)).unwrap(), "64.0");
+		assert_eq!(to_string(&float64(64.0)).unwrap(), "64.0");
 
 		assert_eq!(to_string(&boolean(true)).unwrap(), "true");
 		assert_eq!(to_string(&boolean(false)).unwrap(), "false");

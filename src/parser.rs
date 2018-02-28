@@ -230,15 +230,35 @@ fn information_element_parser(
 			_ => panic!(),
 		},
 		ipv4Address => match length {
-			4 => map!(input, take!(4), |slice| Data_Value::ipv4Address(
-				slice.to_vec()
-			)),
+			4 => map!(input, be_u32, |u| Data_Value::ipv4Address(Ipv4Addr::from(
+				u
+			))),
 			_ => panic!(),
 		},
 		ipv6Address => match length {
-			16 => map!(input, take!(16), |slice| Data_Value::ipv6Address(
-				slice.to_vec()
-			)),
+			16 => map!(
+				input,
+				tuple!(
+					be_u16,
+					be_u16,
+					be_u16,
+					be_u16,
+					be_u16,
+					be_u16,
+					be_u16,
+					be_u16
+				),
+				|(u0, u1, u2, u3, u4, u5, u6, u7)| Data_Value::ipv6Address(Ipv6Addr::new(
+					u0,
+					u1,
+					u2,
+					u3,
+					u4,
+					u5,
+					u6,
+					u7
+				))
+			),
 			_ => panic!(),
 		},
 		basicList => panic!("type not implemented"),
@@ -853,6 +873,35 @@ mod tests {
 				&[][..],
 				error_kind::STRING_NOT_UTF8
 			)))
+		);
+	}
+
+	#[test]
+	fn ip_address_parser_test() {
+		let data : &[u8] = &[0x00, 0x01, 0x02, 0x03];
+		let res = Data_Value::ipv4Address(Ipv4Addr::new(0x00, 0x01, 0x02, 0x03));
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::ipv4Address, 4),
+			Ok((&[][..], res))
+		);
+
+		let data : &[u8] = &[
+			0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+			0x0e, 0x0f,
+		];
+		let res = Data_Value::ipv6Address(Ipv6Addr::new(
+			0x0001,
+			0x0203,
+			0x0405,
+			0x0607,
+			0x0809,
+			0x0a0b,
+			0x0c0d,
+			0x0e0f,
+		));
+		assert_eq!(
+			information_element_parser(&data, Abstract_Data_Type::ipv6Address, 16),
+			Ok((&[][..], res))
 		);
 	}
 

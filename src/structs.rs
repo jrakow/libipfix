@@ -1,4 +1,5 @@
 use std;
+pub use std::net::{Ipv4Addr, Ipv6Addr};
 
 pub const MESSAGE_HEADER_LENGTH : u16 = 16;
 pub const SET_HEADER_LENGTH : u16 = 4;
@@ -104,8 +105,8 @@ pub enum Data_Value {
 	dateTimeMilliseconds(u64),
 	dateTimeMicroseconds(u32, u32),
 	dateTimeNanoseconds(u32, u32),
-	ipv4Address(Vec<u8>), // always length 4
-	ipv6Address(Vec<u8>), // always length 16
+	ipv4Address(Ipv4Addr),
+	ipv6Address(Ipv6Addr),
 	// TODO
 	basicList,
 	subTemplateList,
@@ -147,24 +148,8 @@ impl std::fmt::Display for Data_Value {
 				}}"#,
 				sec, frac
 			),
-			ipv4Address(ref arr) => {
-				for i in (1..4).rev() {
-					match write!(f, "{}.", arr[i]) {
-						Ok(_) => {}
-						Err(e) => return Err(e),
-					}
-				}
-				write!(f, "{}", arr[0])
-			}
-			ipv6Address(ref arr) => {
-				for i in (1..16).rev() {
-					match write!(f, "{:x}:", arr[i]) {
-						Ok(_) => {}
-						Err(e) => return Err(e),
-					}
-				}
-				write!(f, "{:x}", arr[0])
-			}
+			ipv4Address(ref addr) => write!(f, "{}", addr),
+			ipv6Address(ref addr) => write!(f, "{}", addr),
 			basicList | subTemplateList | subTemplateMultiList => Err(std::fmt::Error),
 		}
 	}

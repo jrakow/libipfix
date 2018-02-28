@@ -105,8 +105,8 @@ pub enum Data_Value {
 	string(String),
 	dateTimeSeconds(u32),
 	dateTimeMilliseconds(u64),
-	dateTimeMicroseconds(u32, u32),
-	dateTimeNanoseconds(u32, u32),
+	dateTimeMicroseconds { seconds : u32, fraction : u32 },
+	dateTimeNanoseconds { seconds : u32, fraction : u32 },
 	ipv4Address(Ipv4Addr),
 	ipv6Address(Ipv6Addr),
 	// TODO
@@ -140,10 +140,11 @@ impl Serialize for Data_Value {
 			)),
 			&octetArray(ref arr) => s.serialize_bytes(&arr),
 			&string(ref st) => s.serialize_str(&st),
-			&dateTimeMicroseconds(sec, frac) | &dateTimeNanoseconds(sec, frac) => {
+			&dateTimeMicroseconds { seconds, fraction }
+			| &dateTimeNanoseconds { seconds, fraction } => {
 				let mut ts = s.serialize_tuple_struct("", 2)?;
-				ts.serialize_field(&sec)?;
-				ts.serialize_field(&frac)?;
+				ts.serialize_field(&seconds)?;
+				ts.serialize_field(&fraction)?;
 				ts.end()
 			}
 			&ipv4Address(addr) => s.serialize_str(&format!("{}", addr)),
@@ -230,11 +231,17 @@ mod tests {
 		);
 
 		assert_eq!(
-			to_string(&dateTimeMicroseconds(3600, 1)).unwrap(),
+			to_string(&dateTimeMicroseconds {
+				seconds : 3600,
+				fraction : 1,
+			}).unwrap(),
 			"[3600,1]"
 		);
 		assert_eq!(
-			to_string(&dateTimeNanoseconds(3600, 1)).unwrap(),
+			to_string(&dateTimeNanoseconds {
+				seconds : 3600,
+				fraction : 1,
+			}).unwrap(),
 			"[3600,1]"
 		);
 

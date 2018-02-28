@@ -222,13 +222,16 @@ fn information_element_parser(
 		},
 		dateTimeMicroseconds => match length {
 			8 => map!(input, tuple!(be_u32, be_u32), |(seconds, fraction)| {
-				Data_Value::dateTimeMicroseconds(seconds, fraction & 0xFFFF_F800) // ignore lower 11 Bit of fraction
+				Data_Value::dateTimeMicroseconds {
+					seconds,
+					fraction : fraction & 0xFFFF_F800,
+				} // ignore lower 11 Bit of fraction
 			}),
 			_ => panic!(),
 		},
 		dateTimeNanoseconds => match length {
 			8 => map!(input, tuple!(be_u32, be_u32), |(seconds, fraction)| {
-				Data_Value::dateTimeNanoseconds(seconds, fraction)
+				Data_Value::dateTimeNanoseconds { seconds, fraction }
 			}),
 			_ => panic!(),
 		},

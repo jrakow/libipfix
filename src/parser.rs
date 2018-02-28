@@ -859,7 +859,6 @@ mod tests {
 		);
 
 		let data : &[u8] = &[240, 0, 146, 151]; // modified
-		let _res = Data_Value::string("💖".to_string());
 		assert_eq!(
 			information_element_parser(&data, Abstract_Data_Type::string, 4),
 			Err(Err::Error(nom::Context::Code(
@@ -869,7 +868,6 @@ mod tests {
 		);
 
 		let data : &[u8] = &[4, 240, 0, 146, 151]; // modified
-		let _res = Data_Value::string("💖".to_string());
 		assert_eq!(
 			information_element_parser(&data, Abstract_Data_Type::string, 0xffffu16),
 			Err(Err::Error(nom::Context::Code(

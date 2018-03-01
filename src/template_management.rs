@@ -413,6 +413,17 @@ mod verify_template_tests {
 		};
 		assert!(verify_template(&template).is_err());
 
+		let template = Template_Record {
+			header : Template_Record_Header {
+				template_id : 256,
+				scope_field_count : 1,
+				field_count : 2,
+			},
+			scope_fields : vec![DUMMY_FIELD],
+			fields : vec![],
+		};
+		assert!(verify_template(&template).is_err());
+
 		let template = make_one_field_template(Field_Specifier {
 				information_element_id : 0xffff,
 				field_length : 1,

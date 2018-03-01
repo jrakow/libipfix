@@ -122,35 +122,35 @@ impl Serialize for Data_Value {
 	{
 		use Data_Value::*;
 
-		match self {
-			&unsigned8(u) => s.serialize_u8(u),
-			&unsigned16(u) => s.serialize_u16(u),
-			&unsigned32(u) | &dateTimeSeconds(u) => s.serialize_u32(u),
-			&unsigned64(u) | &dateTimeMilliseconds(u) => s.serialize_u64(u),
-			&signed8(u) => s.serialize_i8(u),
-			&signed16(u) => s.serialize_i16(u),
-			&signed32(u) => s.serialize_i32(u),
-			&signed64(u) => s.serialize_i64(u),
-			&float32(u) => s.serialize_f32(u),
-			&float64(u) => s.serialize_f64(u),
-			&boolean(u) => s.serialize_bool(u),
-			&macAddress(ref addr) => s.serialize_str(&format!(
+		match *self {
+			unsigned8(u) => s.serialize_u8(u),
+			unsigned16(u) => s.serialize_u16(u),
+			unsigned32(u) | dateTimeSeconds(u) => s.serialize_u32(u),
+			unsigned64(u) | dateTimeMilliseconds(u) => s.serialize_u64(u),
+			signed8(u) => s.serialize_i8(u),
+			signed16(u) => s.serialize_i16(u),
+			signed32(u) => s.serialize_i32(u),
+			signed64(u) => s.serialize_i64(u),
+			float32(u) => s.serialize_f32(u),
+			float64(u) => s.serialize_f64(u),
+			boolean(u) => s.serialize_bool(u),
+			macAddress(ref addr) => s.serialize_str(&format!(
 				"{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}",
 				addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 			)),
-			&octetArray(ref arr) => s.serialize_bytes(&arr),
-			&string(ref st) => s.serialize_str(&st),
-			&dateTimeMicroseconds { seconds, fraction }
-			| &dateTimeNanoseconds { seconds, fraction } => {
+			octetArray(ref arr) => s.serialize_bytes(arr),
+			string(ref st) => s.serialize_str(st),
+			dateTimeMicroseconds { seconds, fraction }
+			| dateTimeNanoseconds { seconds, fraction } => {
 				let mut ts = s.serialize_tuple_struct("", 2)?;
 				ts.serialize_field(&seconds)?;
 				ts.serialize_field(&fraction)?;
 				ts.end()
 			}
-			&ipv4Address(addr) => s.serialize_str(&format!("{}", addr)),
-			&ipv6Address(addr) => s.serialize_str(&format!("{}", addr)),
+			ipv4Address(addr) => s.serialize_str(&format!("{}", addr)),
+			ipv6Address(addr) => s.serialize_str(&format!("{}", addr)),
 			// TODO
-			&basicList | &subTemplateList | &subTemplateMultiList => unimplemented!(),
+			basicList | subTemplateList | subTemplateMultiList => unimplemented!(),
 		}
 	}
 }

@@ -18,7 +18,7 @@ named!(pub message_parser<Message>,
 				))
 			)
 		) >>
-		(Message{ header : message_header, sets : sets })
+		(Message{ header : message_header, sets })
 	))
 );
 

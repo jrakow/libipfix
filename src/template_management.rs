@@ -59,7 +59,7 @@ impl Template_Cache {
 }
 
 #[cfg(test)]
-mod tests {
+mod template_cache_tests {
 	use super::*;
 	const DUMMY_FIELD : Field_Specifier = Field_Specifier {
 		information_element_id : 210,
@@ -337,4 +337,103 @@ pub fn verify_template(template : &Template_Record) -> Result<(), Verify_Templat
 	}
 
 	Ok(())
+}
+
+#[cfg(test)]
+mod verify_template_tests {
+	use super::*;
+	const DUMMY_FIELD : Field_Specifier = Field_Specifier {
+		information_element_id : 210,
+		field_length : 4,
+		enterprise_number : None,
+	};
+
+	#[test]
+	fn verify_template_test() {
+		let make_one_field_template = |field : Field_Specifier | Template_Record {
+			header : Template_Record_Header {
+				template_id : 256,
+				scope_field_count : 0,
+				field_count : 1,
+			},
+			scope_fields : vec![],
+			fields : vec![field],
+		};
+
+		let template = make_one_field_template(DUMMY_FIELD);
+		assert!(verify_template(&template).is_ok());
+
+		let template = Template_Record {
+			header : Template_Record_Header {
+				template_id : 256,
+				scope_field_count : 1,
+				field_count : 1,
+			},
+			scope_fields : vec![DUMMY_FIELD],
+			fields : vec![],
+		};
+		assert!(verify_template(&template).is_ok());
+
+		let template = Template_Record {
+			header : Template_Record_Header {
+				template_id : 256,
+				scope_field_count : 1,
+				field_count : 2,
+			},
+			scope_fields : vec![DUMMY_FIELD],
+			fields : vec![DUMMY_FIELD],
+		};
+		assert!(verify_template(&template).is_ok());
+
+		let template = Template_Record {
+			header : Template_Record_Header {
+				template_id : 256,
+				scope_field_count : 0,
+				field_count : 0,
+			},
+			scope_fields : vec![],
+			fields : vec![],
+		};
+		assert!(verify_template(&template).is_err());
+
+		let template = Template_Record {
+			header : Template_Record_Header {
+				template_id : 256,
+				scope_field_count : 2,
+				field_count : 1,
+			},
+			scope_fields : vec![],
+			fields : vec![],
+		};
+		assert!(verify_template(&template).is_err());
+
+		let template = make_one_field_template(Field_Specifier {
+				information_element_id : 0xffff,
+				field_length : 1,
+				enterprise_number : None,
+			}
+		);
+		assert!(verify_template(&template).is_err());
+
+		let template = make_one_field_template(Field_Specifier {
+				information_element_id : 210,
+				field_length : 0,
+				enterprise_number : None,
+			});
+		assert!(verify_template(&template).is_err());
+
+		let template = make_one_field_template(Field_Specifier {
+				information_element_id : 210,
+				field_length : 1,
+				enterprise_number : Some(32473),
+			});
+		assert!(verify_template(&template).is_err());
+
+		let template = make_one_field_template(Field_Specifier {
+				information_element_id : 1,
+				field_length : 256,
+				enterprise_number : None,
+			});
+		assert!(verify_template(&template).is_err());
+	}
 }

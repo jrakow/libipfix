@@ -156,8 +156,8 @@ impl Serialize for DataValue {
 }
 
 pub struct TypedDataRecord<'a> {
-	data : &'a DataRecord,
-	template : &'a TemplateRecord,
+	pub data : &'a DataRecord,
+	pub template : &'a TemplateRecord,
 }
 
 impl<'a> Serialize for TypedDataRecord<'a> {

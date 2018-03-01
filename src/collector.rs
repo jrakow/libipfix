@@ -71,6 +71,13 @@ pub fn collect(input : &[u8]) {
 						}
 					};
 					for (record_num, record) in records.1.iter().enumerate() {
+						println!(
+							"{}",
+							serde_json::to_string(&TypedDataRecord {
+								data : record,
+								template,
+							}).unwrap()
+						);
 						trace!(
 							"data record {}.{}.{}: {:?}",
 							message_num,

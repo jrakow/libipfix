@@ -14,7 +14,7 @@ matrix:
   allow_failures:
     - rust: nightly
 before_script:
-- cargo install --git https://github.com/xd009642/tarpaulin.git --branch develop cargo-tarpaulin
+- cargo tarpaulin --help || cargo install --git https://github.com/xd009642/tarpaulin.git --branch develop cargo-tarpaulin
 script:
 - cargo clean
 - cargo build

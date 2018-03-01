@@ -181,7 +181,6 @@ mod tests {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Verify_Template_Error {
-	Scope_Field_Count_Invalid(u16),
 	Field_Count_Invalid(u16),
 	Scope_Field_Count_Mismatch {
 		count_header : u16,
@@ -210,7 +209,6 @@ impl std::fmt::Display for Verify_Template_Error {
 		use Verify_Template_Error::*;
 
 		match *self {
-			Scope_Field_Count_Invalid(c) => write!(f, "scope field count {} is invalid", c),
 			Field_Count_Invalid(c) => write!(f, "field count {} is invalid", c),
 			Scope_Field_Count_Mismatch { count_header, len } => write!(
 				f,

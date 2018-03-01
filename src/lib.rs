@@ -5,8 +5,8 @@ extern crate nom;
 extern crate serde;
 extern crate serde_json;
 
-pub mod collector;
-pub use collector::*;
+pub mod collect;
+pub use collect::*;
 pub mod information_element;
 pub use information_element::*;
 pub mod parser;

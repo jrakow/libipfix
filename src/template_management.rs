@@ -242,7 +242,9 @@ impl std::fmt::Display for Verify_Template_Error {
 				write!(f, "length {} not implemented for type {}", type_, length)
 			}
 			Type_Not_Implemented(type_) => write!(f, "type {} not implemented", type_),
-			Enterprise_Numbers_Not_Implemented => write!(f, "enterprise numbers are not implemented"),
+			Enterprise_Numbers_Not_Implemented => {
+				write!(f, "enterprise numbers are not implemented")
+			}
 		}
 	}
 }

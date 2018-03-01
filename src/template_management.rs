@@ -202,6 +202,7 @@ pub enum Verify_Template_Error {
 		type_ : Abstract_Data_Type,
 	},
 	Type_Not_Implemented(Abstract_Data_Type),
+	Enterprise_Numbers_Not_Implemented,
 }
 
 impl std::fmt::Display for Verify_Template_Error {
@@ -241,6 +242,7 @@ impl std::fmt::Display for Verify_Template_Error {
 				write!(f, "length {} not implemented for type {}", type_, length)
 			}
 			Type_Not_Implemented(type_) => write!(f, "type {} not implemented", type_),
+			Enterprise_Numbers_Not_Implemented => write!(f, "enterprise numbers are not implemented"),
 		}
 	}
 }
@@ -329,6 +331,10 @@ pub fn verify_template(template : &Template_Record) -> Result<(), Verify_Templat
 			},
 			basicList | subTemplateList | subTemplateMultiList => Err(Type_Not_Implemented(type_)),
 		};
+
+		if field.enterprise_number.is_some() {
+			return Err(Enterprise_Numbers_Not_Implemented)
+		}
 
 		match error {
 			Ok(_) => {}

@@ -13,6 +13,8 @@ rust:
 matrix:
   allow_failures:
     - rust: nightly
+before_script:
+- cargo install --git https://github.com/xd009642/tarpaulin.git --branch develop cargo-tarpaulin
 script:
 - cargo clean
 - cargo build
@@ -20,6 +22,5 @@ script:
 
 after_success: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
-    cargo install --git https://github.com/xd009642/tarpaulin.git --branch develop cargo-tarpaulin
     cargo tarpaulin --exclude-files src/information_element.rs --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
   fi

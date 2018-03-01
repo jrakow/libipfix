@@ -20,6 +20,6 @@ script:
 
 after_success: |
   if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
-    bash <(curl https://raw.githubusercontent.com/xd009642/tarpaulin/master/travis-install.sh)
-    cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
+    cargo install --git https://github.com/xd009642/tarpaulin.git --branch develop cargo-tarpaulin
+    cargo tarpaulin --exclude-files src/information_element.rs --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
   fi

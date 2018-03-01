@@ -15,7 +15,7 @@ fn data_records_parser_fuzz_test() {}
 
 #[test]
 fn template_records_parser_fuzz_test() {
-	let set_header = Set_Header {
+	let set_header = SetHeader {
 		set_id : 3,
 		length : 256,
 	};

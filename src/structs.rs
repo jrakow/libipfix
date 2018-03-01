@@ -8,12 +8,12 @@ pub const SET_HEADER_LENGTH : u16 = 4;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Message<'a> {
-	pub header : Message_Header,
-	pub sets : Vec<(Set_Header, &'a [u8])>,
+	pub header : MessageHeader,
+	pub sets : Vec<(SetHeader, &'a [u8])>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Message_Header {
+pub struct MessageHeader {
 	pub version_number : u16,
 	pub length : u16,
 	pub export_time : u32,
@@ -22,145 +22,145 @@ pub struct Message_Header {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Field_Specifier {
+pub struct FieldSpecifier {
 	pub information_element_id : u16,
 	pub field_length : u16,
 	pub enterprise_number : Option<u32>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Set_Header {
+pub struct SetHeader {
 	pub set_id : u16,
 	pub length : u16,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Template_Record {
-	pub header : Template_Record_Header,
-	pub scope_fields : Vec<Field_Specifier>,
-	pub fields : Vec<Field_Specifier>,
+pub struct TemplateRecord {
+	pub header : TemplateRecordHeader,
+	pub scope_fields : Vec<FieldSpecifier>,
+	pub fields : Vec<FieldSpecifier>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Template_Record_Header {
+pub struct TemplateRecordHeader {
 	pub template_id : u16,
 	pub field_count : u16,
 	pub scope_field_count : u16,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Data_Record {
-	pub fields : Vec<Data_Value>,
+pub struct DataRecord {
+	pub fields : Vec<DataValue>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Abstract_Data_Type {
-	unsigned8,
-	unsigned16,
-	unsigned32,
-	unsigned64,
-	signed8,
-	signed16,
-	signed32,
-	signed64,
-	float32,
-	float64,
-	boolean,
-	macAddress,
-	octetArray,
-	string,
-	dateTimeSeconds,
-	dateTimeMilliseconds,
-	dateTimeMicroseconds,
-	dateTimeNanoseconds,
-	ipv4Address,
-	ipv6Address,
+pub enum AbstractDataType {
+	Unsigned8,
+	Unsigned16,
+	Unsigned32,
+	Unsigned64,
+	Signed8,
+	Signed16,
+	Signed32,
+	Signed64,
+	Float32,
+	Float64,
+	Boolean,
+	MacAddress,
+	OctetArray,
+	String,
+	DateTimeSeconds,
+	DateTimeMilliseconds,
+	DateTimeMicroseconds,
+	DateTimeNanoseconds,
+	Ipv4Address,
+	Ipv6Address,
 	// TODO
-	basicList,
-	subTemplateList,
-	subTemplateMultiList,
+	BasicList,
+	SubTemplateList,
+	SubTemplateMultiList,
 }
 
-impl std::fmt::Display for Abstract_Data_Type {
+impl std::fmt::Display for AbstractDataType {
 	fn fmt(&self, f : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
 		write!(f, "{:?}", self)
 	}
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Data_Value {
-	unsigned8(u8),
-	unsigned16(u16),
-	unsigned32(u32),
-	unsigned64(u64),
-	signed8(i8),
-	signed16(i16),
-	signed32(i32),
-	signed64(i64),
-	float32(f32),
-	float64(f64),
-	boolean(bool),
-	macAddress(Vec<u8>), // always length 6
-	octetArray(Vec<u8>),
-	string(String),
-	dateTimeSeconds(u32),
-	dateTimeMilliseconds(u64),
-	dateTimeMicroseconds { seconds : u32, fraction : u32 },
-	dateTimeNanoseconds { seconds : u32, fraction : u32 },
-	ipv4Address(Ipv4Addr),
-	ipv6Address(Ipv6Addr),
+pub enum DataValue {
+	Unsigned8(u8),
+	Unsigned16(u16),
+	Unsigned32(u32),
+	Unsigned64(u64),
+	Signed8(i8),
+	Signed16(i16),
+	Signed32(i32),
+	Signed64(i64),
+	Float32(f32),
+	Float64(f64),
+	Boolean(bool),
+	MacAddress(Vec<u8>), // always length 6
+	OctetArray(Vec<u8>),
+	String(String),
+	DateTimeSeconds(u32),
+	DateTimeMilliseconds(u64),
+	DateTimeMicroseconds { seconds : u32, fraction : u32 },
+	DateTimeNanoseconds { seconds : u32, fraction : u32 },
+	Ipv4Address(Ipv4Addr),
+	Ipv6Address(Ipv6Addr),
 	// TODO
-	basicList,
-	subTemplateList,
-	subTemplateMultiList,
+	BasicList,
+	SubTemplateList,
+	SubTemplateMultiList,
 }
 
-impl Serialize for Data_Value {
+impl Serialize for DataValue {
 	fn serialize<S>(&self, s : S) -> Result<S::Ok, S::Error>
 	where
 		S : Serializer,
 	{
-		use Data_Value::*;
+		use DataValue::*;
 
 		match *self {
-			unsigned8(u) => s.serialize_u8(u),
-			unsigned16(u) => s.serialize_u16(u),
-			unsigned32(u) | dateTimeSeconds(u) => s.serialize_u32(u),
-			unsigned64(u) | dateTimeMilliseconds(u) => s.serialize_u64(u),
-			signed8(u) => s.serialize_i8(u),
-			signed16(u) => s.serialize_i16(u),
-			signed32(u) => s.serialize_i32(u),
-			signed64(u) => s.serialize_i64(u),
-			float32(u) => s.serialize_f32(u),
-			float64(u) => s.serialize_f64(u),
-			boolean(u) => s.serialize_bool(u),
-			macAddress(ref addr) => s.serialize_str(&format!(
+			Unsigned8(u) => s.serialize_u8(u),
+			Unsigned16(u) => s.serialize_u16(u),
+			Unsigned32(u) | DateTimeSeconds(u) => s.serialize_u32(u),
+			Unsigned64(u) | DateTimeMilliseconds(u) => s.serialize_u64(u),
+			Signed8(u) => s.serialize_i8(u),
+			Signed16(u) => s.serialize_i16(u),
+			Signed32(u) => s.serialize_i32(u),
+			Signed64(u) => s.serialize_i64(u),
+			Float32(u) => s.serialize_f32(u),
+			Float64(u) => s.serialize_f64(u),
+			Boolean(u) => s.serialize_bool(u),
+			MacAddress(ref addr) => s.serialize_str(&format!(
 				"{:02X}-{:02X}-{:02X}-{:02X}-{:02X}-{:02X}",
 				addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 			)),
-			octetArray(ref arr) => s.serialize_bytes(arr),
-			string(ref st) => s.serialize_str(st),
-			dateTimeMicroseconds { seconds, fraction }
-			| dateTimeNanoseconds { seconds, fraction } => {
+			OctetArray(ref arr) => s.serialize_bytes(arr),
+			String(ref st) => s.serialize_str(st),
+			DateTimeMicroseconds { seconds, fraction }
+			| DateTimeNanoseconds { seconds, fraction } => {
 				let mut ts = s.serialize_tuple_struct("", 2)?;
 				ts.serialize_field(&seconds)?;
 				ts.serialize_field(&fraction)?;
 				ts.end()
 			}
-			ipv4Address(addr) => s.serialize_str(&format!("{}", addr)),
-			ipv6Address(addr) => s.serialize_str(&format!("{}", addr)),
+			Ipv4Address(addr) => s.serialize_str(&format!("{}", addr)),
+			Ipv6Address(addr) => s.serialize_str(&format!("{}", addr)),
 			// TODO
-			basicList | subTemplateList | subTemplateMultiList => unimplemented!(),
+			BasicList | SubTemplateList | SubTemplateMultiList => unimplemented!(),
 		}
 	}
 }
 
-pub struct Typed_Data_Record<'a> {
-	data : &'a Data_Record,
-	template : &'a Template_Record,
+pub struct TypedDataRecord<'a> {
+	data : &'a DataRecord,
+	template : &'a TemplateRecord,
 }
 
-impl<'a> Serialize for Typed_Data_Record<'a> {
+impl<'a> Serialize for TypedDataRecord<'a> {
 	fn serialize<S>(&self, s : S) -> Result<S::Ok, S::Error>
 	where
 		S : Serializer,
@@ -189,56 +189,56 @@ mod tests {
 
 	#[test]
 	pub fn data_value_json_test() {
-		use Data_Value::*;
+		use DataValue::*;
 
-		assert_eq!(to_string(&unsigned8(255)).unwrap(), "255");
-		assert_eq!(to_string(&unsigned16(65535)).unwrap(), "65535");
-		assert_eq!(to_string(&unsigned32(4294967295)).unwrap(), "4294967295");
+		assert_eq!(to_string(&Unsigned8(255)).unwrap(), "255");
+		assert_eq!(to_string(&Unsigned16(65535)).unwrap(), "65535");
+		assert_eq!(to_string(&Unsigned32(4294967295)).unwrap(), "4294967295");
 		assert_eq!(
-			to_string(&unsigned64(18446744073709551615)).unwrap(),
+			to_string(&Unsigned64(18446744073709551615)).unwrap(),
 			"18446744073709551615"
 		);
 
-		assert_eq!(to_string(&signed8(-5)).unwrap(), "-5");
-		assert_eq!(to_string(&signed16(-500)).unwrap(), "-500");
-		assert_eq!(to_string(&signed32(-500000000)).unwrap(), "-500000000");
+		assert_eq!(to_string(&Signed8(-5)).unwrap(), "-5");
+		assert_eq!(to_string(&Signed16(-500)).unwrap(), "-500");
+		assert_eq!(to_string(&Signed32(-500000000)).unwrap(), "-500000000");
 		assert_eq!(
-			to_string(&signed64(-5000000000000)).unwrap(),
+			to_string(&Signed64(-5000000000000)).unwrap(),
 			"-5000000000000"
 		);
 
-		assert_eq!(to_string(&float32(32.0)).unwrap(), "32.0");
-		assert_eq!(to_string(&float64(64.0)).unwrap(), "64.0");
+		assert_eq!(to_string(&Float32(32.0)).unwrap(), "32.0");
+		assert_eq!(to_string(&Float64(64.0)).unwrap(), "64.0");
 
-		assert_eq!(to_string(&boolean(true)).unwrap(), "true");
-		assert_eq!(to_string(&boolean(false)).unwrap(), "false");
+		assert_eq!(to_string(&Boolean(true)).unwrap(), "true");
+		assert_eq!(to_string(&Boolean(false)).unwrap(), "false");
 
 		assert_eq!(
-			to_string(&macAddress([0x00, 0x01, 0x02, 0x03, 0x04, 0x05].to_vec())).unwrap(),
+			to_string(&MacAddress([0x00, 0x01, 0x02, 0x03, 0x04, 0x05].to_vec())).unwrap(),
 			"\"00-01-02-03-04-05\""
 		);
 		assert_eq!(
-			to_string(&octetArray([0x00, 0x01, 0x02, 0x03, 0x04, 0x05].to_vec())).unwrap(),
+			to_string(&OctetArray([0x00, 0x01, 0x02, 0x03, 0x04, 0x05].to_vec())).unwrap(),
 			"[0,1,2,3,4,5]"
 		);
 
-		assert_eq!(to_string(&string("💖".to_string())).unwrap(), "\"💖\"");
+		assert_eq!(to_string(&String("💖".to_string())).unwrap(), "\"💖\"");
 
-		assert_eq!(to_string(&dateTimeSeconds(3600)).unwrap(), "3600");
+		assert_eq!(to_string(&DateTimeSeconds(3600)).unwrap(), "3600");
 		assert_eq!(
-			to_string(&dateTimeMilliseconds(3_600_000)).unwrap(),
+			to_string(&DateTimeMilliseconds(3_600_000)).unwrap(),
 			"3600000"
 		);
 
 		assert_eq!(
-			to_string(&dateTimeMicroseconds {
+			to_string(&DateTimeMicroseconds {
 				seconds : 3600,
 				fraction : 1,
 			}).unwrap(),
 			"[3600,1]"
 		);
 		assert_eq!(
-			to_string(&dateTimeNanoseconds {
+			to_string(&DateTimeNanoseconds {
 				seconds : 3600,
 				fraction : 1,
 			}).unwrap(),
@@ -246,11 +246,11 @@ mod tests {
 		);
 
 		assert_eq!(
-			to_string(&ipv4Address(std::net::Ipv4Addr::new(127, 0, 0, 1))).unwrap(),
+			to_string(&Ipv4Address(std::net::Ipv4Addr::new(127, 0, 0, 1))).unwrap(),
 			"\"127.0.0.1\""
 		);
 		assert_eq!(
-			to_string(&ipv6Address(std::net::Ipv6Addr::new(
+			to_string(&Ipv6Address(std::net::Ipv6Addr::new(
 				0,
 				0,
 				0,
@@ -263,27 +263,27 @@ mod tests {
 			"\"::1\""
 		);
 		/* TODO
-		basicList,
-		subTemplateList,
-		subTemplateMultiList,
+		BasicList,
+		SubTemplateList,
+		SubTemplateMultiList,
 		*/
 	}
 
 	#[test]
 	pub fn data_record_json_test() {
-		let template = Template_Record {
-			header : Template_Record_Header {
+		let template = TemplateRecord {
+			header : TemplateRecordHeader {
 				template_id : 256,
 				field_count : 4,
 				scope_field_count : 0,
 			},
 			fields : vec![
-				Field_Specifier {
+				FieldSpecifier {
 					information_element_id : 210,
 					field_length : 4,
 					enterprise_number : None,
 				},
-				Field_Specifier {
+				FieldSpecifier {
 					information_element_id : 210,
 					field_length : 4,
 					enterprise_number : None,
@@ -291,13 +291,13 @@ mod tests {
 			],
 			scope_fields : vec![],
 		};
-		let record = Data_Record {
+		let record = DataRecord {
 			fields : vec![
-				Data_Value::octetArray(vec![0x00, 0x00, 0x00, 0x00]),
-				Data_Value::octetArray(vec![0x00, 0x00, 0x00, 0x00]),
+				DataValue::OctetArray(vec![0x00, 0x00, 0x00, 0x00]),
+				DataValue::OctetArray(vec![0x00, 0x00, 0x00, 0x00]),
 			],
 		};
-		let typed = Typed_Data_Record {
+		let typed = TypedDataRecord {
 			template : &template,
 			data : &record,
 		};

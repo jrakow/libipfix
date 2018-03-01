@@ -1,5 +1,3 @@
-#![allow(non_camel_case_types)]
-
 #[macro_use]
 extern crate log;
 #[macro_use]

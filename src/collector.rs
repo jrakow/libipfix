@@ -2,7 +2,7 @@ use super::*;
 
 pub fn collect(input : &[u8]) {
 	let mut input = input;
-	let mut cache = Template_Cache::default();
+	let mut cache = TemplateCache::default();
 
 	let mut message_num = 0;
 	while input != &b""[..] {

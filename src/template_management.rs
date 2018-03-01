@@ -250,7 +250,6 @@ impl std::fmt::Display for Verify_Template_Error {
 }
 
 pub fn verify_template(template : &Template_Record) -> Result<(), Verify_Template_Error> {
-	use Abstract_Data_Type::*;
 	use Verify_Template_Error::*;
 
 	if template.header.field_count == 0 {
@@ -274,77 +273,77 @@ pub fn verify_template(template : &Template_Record) -> Result<(), Verify_Templat
 	}
 
 	for field in template.scope_fields.iter().chain(template.fields.iter()) {
-		let information_element = information_element::lookup(field.information_element_id);
-		if information_element.is_none() {
-			return Err(Information_Element_Id_Not_Found(
-				field.information_element_id,
-			));
-		}
-		let information_element = information_element.unwrap();
-
-		if field.field_length == 0 {
-			return Err(Field_Length_Invalid(field.field_length));
-		}
-
-		let type_ = information_element.abstract_data_type;
-		let length = field.field_length;
-
-		// check length
-		let error : Result<(), Verify_Template_Error> = match type_ {
-			// different lengths not implemented
-			unsigned8 | signed8 | boolean => match length {
-				1 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			unsigned16 | signed16 => match length {
-				1 | 2 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			unsigned32 | signed32 => match length {
-				1 | 2 | 4 => Ok(()),
-				3 => Err(Field_Length_Not_Implemented { length, type_ }),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			unsigned64 | signed64 => match length {
-				1 | 2 | 4 | 8 => Ok(()),
-				3 | 5 | 6 | 7 => Err(Field_Length_Not_Implemented { length, type_ }),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			float32 | dateTimeSeconds | ipv4Address => match length {
-				4 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			float64 => match length {
-				4 | 8 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			macAddress => match length {
-				6 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			octetArray | string => Ok(()),
-			dateTimeMilliseconds | dateTimeMicroseconds | dateTimeNanoseconds => match length {
-				8 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			ipv6Address => match length {
-				16 => Ok(()),
-				_ => Err(Field_Length_Mismatch { length, type_ }),
-			},
-			basicList | subTemplateList | subTemplateMultiList => Err(Type_Not_Implemented(type_)),
-		};
-
-		if field.enterprise_number.is_some() {
-			return Err(Enterprise_Numbers_Not_Implemented)
-		}
-
-		match error {
-			Ok(_) => {}
-			Err(e) => return Err(e),
-		};
+		verify_field_specifier(field)?;
 	}
 
 	Ok(())
+}
+
+fn verify_field_specifier(field : &Field_Specifier) -> Result<(), Verify_Template_Error> {
+	use Abstract_Data_Type::*;
+	use Verify_Template_Error::*;
+
+	let information_element = information_element::lookup(field.information_element_id)
+		.ok_or_else(|| (Information_Element_Id_Not_Found(field.information_element_id)))?;
+
+	if field.field_length == 0 {
+		return Err(Field_Length_Invalid(field.field_length));
+	}
+
+	let type_ = information_element.abstract_data_type;
+	let length = field.field_length;
+
+	// check length
+	match type_ {
+		// different lengths not implemented
+		unsigned8 | signed8 | boolean => match length {
+			1 => {}
+			_ => return Err(Field_Length_Mismatch { length, type_ }),
+		},
+		unsigned16 | signed16 => match length {
+			1 | 2 => {}
+			_ => return Err(Field_Length_Mismatch { length, type_ }),
+		},
+		unsigned32 | signed32 => match length {
+			1 | 2 | 4 => {}
+			3 => return Err(Field_Length_Not_Implemented { length, type_ }),
+			_ => return Err(Field_Length_Mismatch { length, type_ }),
+		},
+		unsigned64 | signed64 => match length {
+			1 | 2 | 4 | 8 => {}
+			3 | 5 | 6 | 7 => return Err(Field_Length_Not_Implemented { length, type_ }),
+			_ => return Err(Field_Length_Mismatch { length, type_ }),
+		},
+		float32 | dateTimeSeconds | ipv4Address => match length {
+			4 => {}
+			_ => return Err(Field_Length_Mismatch { length, type_ }),
+		},
+		float64 => match length {
+			4 | 8 => {}
+			_ => return Err(Field_Length_Mismatch { length, type_ }),
+		},
+		macAddress => match length {
+			6 => {}
+			_ => return Err(Field_Length_Mismatch { length, type_ }),
+		},
+		octetArray | string => {}
+		dateTimeMilliseconds | dateTimeMicroseconds | dateTimeNanoseconds => match length {
+			8 => {}
+			_ => return Err(Field_Length_Mismatch { length, type_ }),
+		},
+		ipv6Address => match length {
+			16 => {}
+			_ => return Err(Field_Length_Mismatch { length, type_ }),
+		},
+		basicList | subTemplateList | subTemplateMultiList => {
+			return Err(Type_Not_Implemented(type_))
+		}
+	};
+
+	match field.enterprise_number {
+		Some(_) => Err(Enterprise_Numbers_Not_Implemented),
+		None => Ok(()),
+	}
 }
 
 #[cfg(test)]
@@ -358,17 +357,15 @@ mod verify_template_tests {
 
 	#[test]
 	fn verify_template_test() {
-		let make_one_field_template = |field : Field_Specifier | Template_Record {
+		let template = Template_Record {
 			header : Template_Record_Header {
 				template_id : 256,
 				scope_field_count : 0,
 				field_count : 1,
 			},
 			scope_fields : vec![],
-			fields : vec![field],
+			fields : vec![DUMMY_FIELD],
 		};
-
-		let template = make_one_field_template(DUMMY_FIELD);
 		assert!(verify_template(&template).is_ok());
 
 		let template = Template_Record {
@@ -425,34 +422,38 @@ mod verify_template_tests {
 			fields : vec![],
 		};
 		assert!(verify_template(&template).is_err());
+	}
 
-		let template = make_one_field_template(Field_Specifier {
-				information_element_id : 0xffff,
-				field_length : 1,
-				enterprise_number : None,
-			}
-		);
-		assert!(verify_template(&template).is_err());
+	#[test]
+	fn verify_field_specifier_test() {
+		assert!(verify_field_specifier(&DUMMY_FIELD).is_ok());
 
-		let template = make_one_field_template(Field_Specifier {
-				information_element_id : 210,
-				field_length : 0,
-				enterprise_number : None,
-			});
-		assert!(verify_template(&template).is_err());
+		let field = Field_Specifier {
+			information_element_id : 0xffff,
+			field_length : 1,
+			enterprise_number : None,
+		};
+		assert!(verify_field_specifier(&field).is_err());
 
-		let template = make_one_field_template(Field_Specifier {
-				information_element_id : 210,
-				field_length : 1,
-				enterprise_number : Some(32473),
-			});
-		assert!(verify_template(&template).is_err());
+		let field = Field_Specifier {
+			information_element_id : 210,
+			field_length : 0,
+			enterprise_number : None,
+		};
+		assert!(verify_field_specifier(&field).is_err());
 
-		let template = make_one_field_template(Field_Specifier {
-				information_element_id : 1,
-				field_length : 256,
-				enterprise_number : None,
-			});
-		assert!(verify_template(&template).is_err());
+		let field = Field_Specifier {
+			information_element_id : 210,
+			field_length : 1,
+			enterprise_number : Some(32473),
+		};
+		assert!(verify_field_specifier(&field).is_err());
+
+		let field = Field_Specifier {
+			information_element_id : 1,
+			field_length : 256,
+			enterprise_number : None,
+		};
+		assert!(verify_field_specifier(&field).is_err());
 	}
 }

@@ -7,7 +7,7 @@ use structs::*;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 named!(pub message_parser<Message>,
-	complete!(do_parse!(
+	do_parse!(
 		message_header : message_header_parser >>
 		sets : length_value!(
 			value!(message_header.length - MESSAGE_HEADER_LENGTH),
@@ -20,7 +20,7 @@ named!(pub message_parser<Message>,
 			)
 		) >>
 		(Message{ header : message_header, sets })
-	))
+	)
 );
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -275,7 +275,7 @@ fn information_element_parser(
 #[cfg_attr(rustfmt, rustfmt_skip)]
 named!(
 	information_element_variable_length_parser<&[u8]>,
-	alt_complete!(
+	alt!(
 		length_data!(verify!(be_u8, |length| length < 255)) |
 		preceded!(tag!([255u8]), length_data!(be_u16))
 	)

@@ -5,6 +5,14 @@ use serde::ser::{Serialize, SerializeMap, SerializeTupleStruct, Serializer};
 
 pub const MESSAGE_HEADER_LENGTH : u16 = 16;
 pub const SET_HEADER_LENGTH : u16 = 4;
+pub const IPFIX_VERSION_NUMBER : u16 = 0x000a;
+pub const IPFIX_VERSION_TAG : &[u8] = &[0x00, 0x0a];
+pub const VARIABLE_LENGTH_LONG_TAG : u8 = 0xff;
+
+pub const TEMPLATE_SET_ID : u16 = 2;
+pub const OPTIONS_TEMPLATE_SET_ID : u16 = 3;
+pub const FIRST_TEMPLATE_ID : u16 = 0x0100;
+pub const LAST_TEMPLATE_ID : u16 = 0xffff;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Message<'a> {

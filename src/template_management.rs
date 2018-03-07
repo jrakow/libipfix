@@ -24,7 +24,7 @@ impl TemplateCache {
 	pub fn update_with(&mut self, template : TemplateRecord) -> Result<UpdateOk, UpdateErr> {
 		use std::collections::hash_map::Entry::*;
 
-		assert!(template.header.template_id >= 256);
+		assert!(template.header.template_id >= FIRST_TEMPLATE_ID);
 		assert!(template.header.scope_field_count as usize == template.scope_fields.len());
 		assert!(
 			template.header.field_count as usize - template.header.scope_field_count as usize
@@ -72,7 +72,7 @@ mod template_cache_tests {
 		let mut cache = TemplateCache::default();
 		let template = TemplateRecord {
 			header : TemplateRecordHeader {
-				template_id : 256,
+				template_id : FIRST_TEMPLATE_ID,
 				field_count : 1,
 				scope_field_count : 0,
 			},
@@ -80,18 +80,18 @@ mod template_cache_tests {
 			fields : vec![DUMMY_FIELD],
 		};
 		assert_eq!(cache.update_with(template.clone()), Ok(UpdateOk::Addition));
-		assert_eq!(cache.lookup(256).unwrap(), &template);
+		assert_eq!(cache.lookup(FIRST_TEMPLATE_ID).unwrap(), &template);
 
 		// identical redefinition
 		assert_eq!(
 			cache.update_with(template.clone()),
 			Ok(UpdateOk::Redefinition)
 		);
-		assert_eq!(cache.lookup(256).unwrap(), &template);
+		assert_eq!(cache.lookup(FIRST_TEMPLATE_ID).unwrap(), &template);
 
 		let removal = TemplateRecord {
 			header : TemplateRecordHeader {
-				template_id : 256,
+				template_id : FIRST_TEMPLATE_ID,
 				field_count : 0,
 				scope_field_count : 0,
 			},
@@ -99,7 +99,7 @@ mod template_cache_tests {
 			fields : vec![],
 		};
 		assert_eq!(cache.update_with(removal.clone()), Ok(UpdateOk::Withdrawal));
-		assert!(cache.lookup(256).is_none());
+		assert!(cache.lookup(FIRST_TEMPLATE_ID).is_none());
 	}
 
 	#[test]
@@ -108,7 +108,7 @@ mod template_cache_tests {
 
 		let template = TemplateRecord {
 			header : TemplateRecordHeader {
-				template_id : 256,
+				template_id : FIRST_TEMPLATE_ID,
 				field_count : 1,
 				scope_field_count : 0,
 			},
@@ -124,7 +124,7 @@ mod template_cache_tests {
 			Err(UpdateErr::RedefinitionDifferent)
 		);
 
-		assert!(cache.lookup(256).is_none());
+		assert!(cache.lookup(FIRST_TEMPLATE_ID).is_none());
 	}
 
 	#[test]
@@ -133,7 +133,7 @@ mod template_cache_tests {
 		assert_eq!(
 			cache.update_with(TemplateRecord {
 				header : TemplateRecordHeader {
-					template_id : 256,
+					template_id : FIRST_TEMPLATE_ID,
 					field_count : 0,
 					scope_field_count : 0,
 				},
@@ -142,7 +142,7 @@ mod template_cache_tests {
 			}),
 			Err(UpdateErr::WithdrawalUnknown)
 		);
-		assert!(cache.lookup(256).is_none());
+		assert!(cache.lookup(FIRST_TEMPLATE_ID).is_none());
 	}
 
 	#[test]
@@ -352,7 +352,7 @@ mod verify_template_tests {
 	fn verify_template_test() {
 		let template = TemplateRecord {
 			header : TemplateRecordHeader {
-				template_id : 256,
+				template_id : FIRST_TEMPLATE_ID,
 				scope_field_count : 0,
 				field_count : 1,
 			},
@@ -363,7 +363,7 @@ mod verify_template_tests {
 
 		let template = TemplateRecord {
 			header : TemplateRecordHeader {
-				template_id : 256,
+				template_id : FIRST_TEMPLATE_ID,
 				scope_field_count : 1,
 				field_count : 1,
 			},
@@ -374,7 +374,7 @@ mod verify_template_tests {
 
 		let template = TemplateRecord {
 			header : TemplateRecordHeader {
-				template_id : 256,
+				template_id : FIRST_TEMPLATE_ID,
 				scope_field_count : 1,
 				field_count : 2,
 			},
@@ -385,7 +385,7 @@ mod verify_template_tests {
 
 		let template = TemplateRecord {
 			header : TemplateRecordHeader {
-				template_id : 256,
+				template_id : FIRST_TEMPLATE_ID,
 				scope_field_count : 0,
 				field_count : 0,
 			},
@@ -396,7 +396,7 @@ mod verify_template_tests {
 
 		let template = TemplateRecord {
 			header : TemplateRecordHeader {
-				template_id : 256,
+				template_id : FIRST_TEMPLATE_ID,
 				scope_field_count : 2,
 				field_count : 1,
 			},
@@ -407,7 +407,7 @@ mod verify_template_tests {
 
 		let template = TemplateRecord {
 			header : TemplateRecordHeader {
-				template_id : 256,
+				template_id : FIRST_TEMPLATE_ID,
 				scope_field_count : 1,
 				field_count : 2,
 			},
@@ -444,7 +444,7 @@ mod verify_template_tests {
 
 		let field = FieldSpecifier {
 			information_element_id : 1,
-			field_length : 256,
+			field_length : FIRST_TEMPLATE_ID,
 			enterprise_number : None,
 		};
 		assert!(verify_field_specifier(&field).is_err());

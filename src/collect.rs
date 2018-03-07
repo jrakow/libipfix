@@ -57,7 +57,7 @@ fn collect_message_body(cache : &mut TemplateCache, message : Message, message_n
 		trace!("set header {}.{}: {:?}", message_num, set_num, set_header);
 
 		match set_header.set_id {
-			2 | 3 => {
+			TEMPLATE_SET_ID | OPTIONS_TEMPLATE_SET_ID => {
 				let templates = match template_records_parser(data, set_header) {
 					Ok((_, t)) => t,
 					Err(_) => {
@@ -83,7 +83,7 @@ fn collect_message_body(cache : &mut TemplateCache, message : Message, message_n
 					}
 				}
 			}
-			256...0xffff => {
+			FIRST_TEMPLATE_ID...LAST_TEMPLATE_ID => {
 				let template = match cache.lookup(set_header.set_id) {
 					None => {
 						error!("received data set without known template");

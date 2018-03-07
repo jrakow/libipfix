@@ -27,13 +27,13 @@ named!(pub message_parser<Message>,
 named!(
 	message_header_parser<MessageHeader>,
 	do_parse!(
-		/* version_number */ tag!([0x00, 0x0a]) >>
+		tag!(IPFIX_VERSION_TAG) >>
 		length : verify!(be_u16, |length| length >= MESSAGE_HEADER_LENGTH) >>
 		export_time : be_u32 >>
 		sequence_number : be_u32 >>
 		observation_domain_id : be_u32 >>
 		(MessageHeader {
-				version_number : 0x000au16,
+				version_number : IPFIX_VERSION_NUMBER,
 				length,
 				export_time,
 				sequence_number,
@@ -276,8 +276,8 @@ fn information_element_parser(
 named!(
 	information_element_variable_length_parser<&[u8]>,
 	alt!(
-		length_data!(verify!(be_u8, |length| length < 255)) |
-		preceded!(tag!([255u8]), length_data!(be_u16))
+		length_data!(verify!(be_u8, |length| length != VARIABLE_LENGTH_LONG_TAG)) |
+		preceded!(tag!([VARIABLE_LENGTH_LONG_TAG]), length_data!(be_u16))
 	)
 );
 
